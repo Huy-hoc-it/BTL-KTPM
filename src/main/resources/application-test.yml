@@ -1,0 +1,10 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/cinema_test}
+    username: ${DB_USERNAME:cinema}
+    password: ${DB_PASSWORD:cinema}
+  main:
+    banner-mode: off
