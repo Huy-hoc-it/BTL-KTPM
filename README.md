@@ -6,6 +6,22 @@ Backend quản lý rạp phim, hiện đang ở giai đoạn dựng nền tảng
 
 Ứng dụng dùng kiến trúc modular monolith. Mỗi module nghiệp vụ được chia thành ba tầng `api -> business -> data`: API nhận/trả JSON, business xử lý quy tắc nghiệp vụ và định nghĩa repository, data triển khai truy cập PostgreSQL bằng JPA. Các module chạy trong một Spring Boot application.
 
+### Contract tạm thời: Booking gọi Theater
+
+Đây là chữ ký tạm thời để Mạnh có thể viết business logic và unit test trước khi module Theater hoàn tất. Thái và Mạnh phải chốt hoặc thay thế contract này trước khi tích hợp.
+
+```java
+package com.example.cinema.modules.theater.business;
+
+public interface ShowtimeModuleApi {
+    ShowtimeSnapshot getShowtimeSnapshot(UUID showtimeId);
+
+    List<SeatSnapshot> getSeatSnapshots(List<UUID> seatIds);
+}
+```
+
+`ShowtimeSnapshot` chỉ chứa `showtimeId`, `auditoriumId`, `startsAt`, `status` và `basePrice`. `SeatSnapshot` chứa `seatId`, `auditoriumId` và `type`. Booking gọi hai method riêng, rồi đối chiếu phòng của suất với phòng của từng ghế; không truy cập controller, repository, JPA entity hoặc bảng dữ liệu của Theater.
+
 ## Yêu cầu
 
 - Java 21 để chạy ứng dụng và kiểm thử bằng Maven.

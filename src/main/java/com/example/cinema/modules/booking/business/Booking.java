@@ -1,19 +1,47 @@
 package com.example.cinema.modules.booking.business;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 public class Booking {
-    private String userID;
-    private String showTimeID;
-    private List<String> seatsID;
 
-    public Booking(String userID, String showTimeID, List<String> seatsID) {
-        this.userID = userID;
-        this.showTimeID = showTimeID;
-        this.seatsID = seatsID;
+    private final UUID bookingId;
+    private final UUID userId;
+    private final UUID showtimeId;
+    private final List<bookingSeat> seats;
+    private final BigDecimal totalAmount;
+
+    public Booking(
+            UUID userId,
+            UUID showtimeId,
+            List<bookingSeat> seats,
+            BigDecimal totalAmount
+    ) {
+        this.bookingId = UUID.randomUUID();
+        this.userId = userId;
+        this.showtimeId = showtimeId;
+        this.seats = List.copyOf(seats);
+        this.totalAmount = totalAmount;
     }
 
-    public void setSeatsID(List<String> seatsID) {
-        this.seatsID = seatsID;
+    public UUID getBookingId() {
+        return bookingId;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public UUID getShowtimeId() {
+        return showtimeId;
+    }
+
+    public List<bookingSeat> getSeats() {
+        return seats;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
     }
 }
