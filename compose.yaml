@@ -23,11 +23,15 @@ services:
       DB_URL: jdbc:postgresql://db:5432/cinema
       DB_USERNAME: cinema
       DB_PASSWORD: ${DB_PASSWORD:-cinema}
+      JWT_SECRET: ${JWT_SECRET:-local-only-change-me-before-any-real-deployment-2026}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-3600}
+      DEMO_ADMIN_USERNAME: ${DEMO_ADMIN_USERNAME:-}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
 volumes:
   postgres_data:

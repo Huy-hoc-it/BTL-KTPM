@@ -6,3 +6,8 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/cinema}
     username: ${DB_USERNAME:cinema}
     password: ${DB_PASSWORD:cinema}
+
+cinema:
+  jwt:
+    secret: ${JWT_SECRET:local-only-change-me-before-any-real-deployment-2026}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
