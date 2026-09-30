@@ -1,5 +1,8 @@
 package com.example.cinema.shared.api;
 
+import com.example.cinema.modules.identity.business.InvalidRegistrationException;
+import com.example.cinema.modules.identity.business.InvalidCredentialsException;
+import com.example.cinema.modules.identity.business.UsernameAlreadyExistsException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +39,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ErrorResponse> handleValidationError(HttpServletRequest request) {
         return error(request, HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "Request is invalid");
+    }
+
+    @ExceptionHandler(InvalidRegistrationException.class)
+    ResponseEntity<ErrorResponse> handleInvalidRegistration(HttpServletRequest request) {
+        return error(request, HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "Request is invalid");
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    ResponseEntity<ErrorResponse> handleInvalidCredentials(HttpServletRequest request) {
+        return error(request, HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid username or password");
+    }
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    ResponseEntity<ErrorResponse> handleUsernameAlreadyExists(HttpServletRequest request) {
+        return error(request, HttpStatus.CONFLICT, "USERNAME_ALREADY_EXISTS", "Username is already registered");
     }
 
     @ExceptionHandler(Exception.class)

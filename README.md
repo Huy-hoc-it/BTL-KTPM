@@ -39,6 +39,8 @@ docker compose up --build -d
 
 Các giá trị trong `.env.example` chỉ dành cho phát triển local; hãy đổi mật khẩu DB nếu dùng ở môi trường khác. Compose khởi động PostgreSQL trước, chờ database healthy rồi mới chạy API. Các địa chỉ kiểm tra:
 
+`DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` trong `.env` tạo tài khoản Admin demo ở profile `local`. Tài khoản được tạo một lần, mật khẩu phải dài 8–16 ký tự và được lưu bằng BCrypt. Đặt cả hai biến thành rỗng để bỏ qua seeding. Seeder không chạy ở profile `prod`.
+
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
 - OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 - Liveness: <http://localhost:8080/actuator/health/liveness>
