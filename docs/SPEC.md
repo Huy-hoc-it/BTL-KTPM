@@ -333,6 +333,8 @@ Base path: `/api/v1`. Request/response dùng `application/json`.
 | POST | `/auth/login` | Public | Đăng nhập | 200, 401, 422 |
 | GET | `/users/me` | Authenticated | Hồ sơ hiện tại | 200, 401 |
 
+Đăng ký thành công không tự đăng nhập và không trả JWT; người dùng gọi `/auth/login` riêng để lấy token.
+
 ```json
 {
   "username": "nguyenvana",
@@ -354,6 +356,18 @@ Response login:
 ```json
 {
   "data": { "accessToken": "<jwt>", "tokenType": "Bearer", "expiresIn": 3600 }
+}
+```
+
+Response `GET /users/me` chỉ có `id`, `username`, `role` trong `data`; không trả `createdAt` hoặc `passwordHash`:
+
+```json
+{
+  "data": {
+    "id": "7b1c6d73-8fb0-4b41-9892-1bb26860886c",
+    "username": "nguyenvana",
+    "role": "CUSTOMER"
+  }
 }
 ```
 
@@ -436,13 +450,13 @@ Request tạo suất:
 
 ## 8. Xác thực và bảo mật
 
-- Mật khẩu dài 8–72 ký tự, hash bằng BCrypt.
+- Mật khẩu dài 8–16 ký tự, không bắt buộc chữ hoa, số hay ký tự đặc biệt; hash bằng BCrypt. Không tự trim/chuẩn hóa mật khẩu.
 - JWT chứa `sub`, `role`, `iat`, `exp`; `sub` là UUID của User, không phải username; token hết hạn mặc định sau 60 phút.
 - Một `OncePerRequestFilter` xác thực JWT và thiết lập `SecurityContext`.
 - Authorization dùng `SecurityFilterChain` và method security cho role/ownership; không đọc token lặp lại trong controller.
 - Route mặc định yêu cầu xác thực; route public được khai báo rõ.
 - Toàn bộ `/api/v1/admin/**` yêu cầu role `ADMIN`.
-- API đăng ký luôn tạo `CUSTOMER`; Admin chỉ được tạo qua seed cho dev/test.
+- API đăng ký luôn tạo `CUSTOMER`; Admin chỉ được tạo qua seed cho local/test, với username/password demo lấy từ biến môi trường và không dùng seed đó ở production.
 - Secret lấy từ biến môi trường; không commit `.env`.
 - Không log password, token, password hash hoặc chuỗi kết nối.
 - Production không trả stack trace, SQL hoặc exception nội bộ.
@@ -470,7 +484,8 @@ Transaction đặt ở method business service bằng `@Transactional`. Database
 |---|---:|---|
 | JSON sai cú pháp, sai kiểu hoặc query parameter không parse được | 400 | `MALFORMED_REQUEST` |
 | DTO đúng cú pháp nhưng vi phạm constraint validation | 422 | `VALIDATION_ERROR` |
-| Sai credential/token | 401 | `INVALID_CREDENTIALS` |
+| Sai username/password khi đăng nhập | 401 | `INVALID_CREDENTIALS` |
+| Thiếu, sai hoặc hết hạn token ở endpoint bảo vệ | 401 | `UNAUTHORIZED` |
 | Thiếu role/ownership | 403 | `FORBIDDEN` |
 | Không tìm thấy | 404 | `MOVIE_NOT_FOUND` |
 | Username trùng, ghế đã đặt, lịch chồng | 409 | `USERNAME_ALREADY_EXISTS`, `SEAT_ALREADY_BOOKED` |
@@ -478,13 +493,13 @@ Transaction đặt ở method business service bằng `@Transactional`. Database
 
 Một `@RestControllerAdvice` thực hiện mapping. Tầng business không ném exception HTTP của Spring.
 
-Các error code tối thiểu: `MALFORMED_REQUEST`, `VALIDATION_ERROR`, `USERNAME_ALREADY_EXISTS`, `INVALID_CREDENTIALS`, `FORBIDDEN`, `MOVIE_NOT_FOUND`, `AUDITORIUM_NOT_FOUND`, `SHOWTIME_NOT_FOUND`, `BOOKING_NOT_FOUND`, `SEAT_NOT_FOUND`, `SEAT_ALREADY_BOOKED`, `SCHEDULE_OVERLAP`, `BOOKING_CANNOT_BE_CANCELLED`, `INTERNAL_ERROR`.
+Các error code tối thiểu: `MALFORMED_REQUEST`, `VALIDATION_ERROR`, `USERNAME_ALREADY_EXISTS`, `INVALID_CREDENTIALS`, `UNAUTHORIZED`, `FORBIDDEN`, `MOVIE_NOT_FOUND`, `AUDITORIUM_NOT_FOUND`, `SHOWTIME_NOT_FOUND`, `BOOKING_NOT_FOUND`, `SEAT_NOT_FOUND`, `SEAT_ALREADY_BOOKED`, `SCHEDULE_OVERLAP`, `BOOKING_CANNOT_BE_CANCELLED`, `INTERNAL_ERROR`.
 
 ### 10.1 Validation đầu vào
 
 | Đối tượng | Validation tối thiểu |
 |---|---|
-| Register/Login | username dài 3–50 ký tự, khớp `[a-zA-Z0-9._-]+`; password 8–72 ký tự |
+| Register/Login | username dài 3–50 ký tự, khớp `[a-zA-Z0-9._-]+`; password 8–16 ký tự |
 | Movie | title/description không rỗng; duration > 0; status hợp lệ |
 | Auditorium | name không rỗng; mỗi dải ghế hợp lệ; không trùng hàng/số |
 | Showtime | UUID hợp lệ; startsAt trong tương lai; basePrice > 0 |
@@ -528,7 +543,7 @@ docker compose up --build
 ./mvnw verify
 ```
 
-Seed dev tạo một Admin, một Customer, một phim, một phòng và một suất chiếu. Credential demo chỉ dùng ở dev/test.
+Seed dev tạo một Admin, một Customer, một phim, một phòng và một suất chiếu. Admin demo chỉ được tạo ở local/test khi có username/password từ biến môi trường; credential demo không dùng ở production.
 
 ### 12.1 Quy ước Flyway migration
 
