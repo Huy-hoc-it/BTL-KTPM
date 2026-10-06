@@ -20,6 +20,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -197,7 +198,7 @@ class PostgreSqlIntegrationTest {
     }
 
     @Test
-    void loginReturnsSignedBearerTokenForRegisteredUser() {
+    void registerLoginAndCurrentProfileWorkWithPostgreSQL() {
         String username = "login-" + UUID.randomUUID();
         String password = " password1 ";
         ResponseEntity<JsonNode> registration = restTemplate.postForEntity(
@@ -217,6 +218,19 @@ class PostgreSqlIntegrationTest {
         assertThat(jwtTokenService.verify(accessToken)).isEqualTo(
                 new AuthenticatedUser(userId, User.Role.CUSTOMER));
         assertThat(login.getBody().toString()).doesNotContain(password, "passwordHash");
+
+        HttpHeaders bearer = new HttpHeaders();
+        bearer.setBearerAuth(accessToken);
+        ResponseEntity<JsonNode> currentUser = restTemplate.exchange(
+                "/api/v1/users/me", HttpMethod.GET,
+                new HttpEntity<>(bearer), JsonNode.class);
+        assertThat(currentUser.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode profile = currentUser.getBody().path("data");
+        assertThat(profile.path("id").asText()).isEqualTo(userId.toString());
+        assertThat(profile.path("username").asText()).isEqualTo(username);
+        assertThat(profile.path("role").asText()).isEqualTo("CUSTOMER");
+        assertThat(profile.size()).isEqualTo(3);
+        assertThat(currentUser.getBody().toString()).doesNotContain(password, "passwordHash", "createdAt");
     }
 
     @Test

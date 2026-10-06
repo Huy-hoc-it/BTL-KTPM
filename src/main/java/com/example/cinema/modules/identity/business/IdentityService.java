@@ -54,4 +54,11 @@ public class IdentityService {
         log.info("Login succeeded userId={}", user.id());
         return new AuthenticatedUser(user.id(), user.role());
     }
+
+    public User findAuthenticatedUser(UUID userId) {
+        if (userId == null) {
+            throw new AuthenticatedUserNotFoundException();
+        }
+        return userRepository.findById(userId).orElseThrow(AuthenticatedUserNotFoundException::new);
+    }
 }

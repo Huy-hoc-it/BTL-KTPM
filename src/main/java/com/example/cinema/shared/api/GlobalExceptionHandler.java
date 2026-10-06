@@ -1,7 +1,8 @@
 package com.example.cinema.shared.api;
 
-import com.example.cinema.modules.identity.business.InvalidRegistrationException;
+import com.example.cinema.modules.identity.business.AuthenticatedUserNotFoundException;
 import com.example.cinema.modules.identity.business.InvalidCredentialsException;
+import com.example.cinema.modules.identity.business.InvalidRegistrationException;
 import com.example.cinema.modules.identity.business.UsernameAlreadyExistsException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -49,6 +50,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     ResponseEntity<ErrorResponse> handleInvalidCredentials(HttpServletRequest request) {
         return error(request, HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid username or password");
+    }
+
+    @ExceptionHandler(AuthenticatedUserNotFoundException.class)
+    ResponseEntity<ErrorResponse> handleAuthenticatedUserNotFound(HttpServletRequest request) {
+        return error(request, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication is no longer valid");
     }
 
     @ExceptionHandler(UsernameAlreadyExistsException.class)
