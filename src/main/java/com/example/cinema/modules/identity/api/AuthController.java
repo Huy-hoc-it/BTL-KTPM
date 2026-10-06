@@ -5,9 +5,9 @@ import com.example.cinema.modules.identity.business.AuthenticatedUser;
 import com.example.cinema.modules.identity.business.IdentityService;
 import com.example.cinema.modules.identity.business.User;
 import com.example.cinema.shared.api.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
@@ -20,6 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@ApiResponses({
+        @ApiResponse(responseCode = "400", description = "Malformed JSON",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "422", description = "Credentials data is invalid",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+})
 public class AuthController {
     private final IdentityService identityService;
     private final JwtTokenService jwtTokenService;
@@ -34,16 +40,12 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Account created",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Malformed JSON",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Username already exists",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "422", description = "Registration data is invalid",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody CredentialsRequest request) {
         User user = identityService.register(request.username(), request.password());
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(user, user.role().name()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(user, user.role()));
     }
 
     @PostMapping("/login")
@@ -51,14 +53,10 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login succeeded",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Malformed JSON",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Invalid credentials",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "422", description = "Login data is invalid",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody CredentialsRequest request) {
         AuthenticatedUser user = identityService.login(request.username(), request.password());
         return ResponseEntity.ok(LoginResponse.bearerToken(
                 jwtTokenService.issue(user), jwtTokenService.expirationSeconds()));

@@ -1,6 +1,5 @@
 package com.example.cinema.modules.identity.api;
 
-import com.example.cinema.modules.identity.business.AuthenticatedUserNotFoundException;
 import com.example.cinema.modules.identity.business.IdentityService;
 import com.example.cinema.modules.identity.business.User;
 import com.example.cinema.shared.api.ErrorResponse;
@@ -12,8 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,15 +37,9 @@ public class UserController {
     })
     public UserResponse me(@AuthenticationPrincipal UUID userId, Authentication authentication) {
         User user = identityService.findAuthenticatedUser(userId);
-        if (authentication == null) {
-            throw new AuthenticatedUserNotFoundException();
-        }
-        String role = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .filter(authority -> authority.equals("ROLE_CUSTOMER") || authority.equals("ROLE_ADMIN"))
-                .map(authority -> authority.substring("ROLE_".length()))
-                .findFirst()
-                .orElseThrow(AuthenticatedUserNotFoundException::new);
+        // The JWT filter supplies exactly one validated CUSTOMER/ADMIN role.
+        User.Role role = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                ? User.Role.ADMIN : User.Role.CUSTOMER;
         return UserResponse.from(user, role);
     }
 }

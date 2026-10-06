@@ -37,13 +37,8 @@ public class GlobalExceptionHandler {
         return error(request, HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "Request is malformed");
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler({MethodArgumentNotValidException.class, InvalidRegistrationException.class})
     ResponseEntity<ErrorResponse> handleValidationError(HttpServletRequest request) {
-        return error(request, HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "Request is invalid");
-    }
-
-    @ExceptionHandler(InvalidRegistrationException.class)
-    ResponseEntity<ErrorResponse> handleInvalidRegistration(HttpServletRequest request) {
         return error(request, HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "Request is invalid");
     }
 

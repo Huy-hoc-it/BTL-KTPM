@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -276,8 +277,9 @@ class ApplicationSmokeTest {
         assertThat(response.getBody().path("data").path("expiresIn").asLong()).isEqualTo(3600);
         String accessToken = response.getBody().path("data").path("accessToken").asText();
         assertThat(response.getBody().toString()).doesNotContain(password, "passwordHash");
-        assertThat(new LoginResponse(new LoginResponse.Data(accessToken, "Bearer", 3600)).toString())
-                .doesNotContain(accessToken);
+        LoginResponse loginResponse = LoginResponse.bearerToken(accessToken, 3600);
+        assertThat(loginResponse.toString()).doesNotContain(accessToken);
+        assertThat(loginResponse.data().toString()).doesNotContain(accessToken);
         assertThat(jwtTokenService.verify(accessToken))
                 .isEqualTo(new AuthenticatedUser(userId, User.Role.CUSTOMER));
     }
@@ -300,21 +302,33 @@ class ApplicationSmokeTest {
     }
 
     @Test
-    void invalidLoginFieldShapesReturnValidationError() {
-        for (String[] fields : new String[][] {
-                {"ab", "password1"},
-                {"a".repeat(51), "password1"},
-                {"bad name", "password1"},
-                {"valid-user", "1234567"},
-                {"valid-user", "x".repeat(17)}
-        }) {
-            ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                    "/api/v1/auth/login",
-                    Map.of("username", fields[0], "password", fields[1]),
-                    JsonNode.class);
+    void credentialEndpointsRejectInvalidFieldsAndNonStringValues() {
+        for (String path : List.of("/api/v1/auth/register", "/api/v1/auth/login")) {
+            for (String[] fields : new String[][] {
+                    {"ab", "password1"},
+                    {"a".repeat(51), "password1"},
+                    {"bad name", "password1"},
+                    {"valid-user", "1234567"},
+                    {"valid-user", "x".repeat(17)}
+            }) {
+                ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                        path, Map.of("username", fields[0], "password", fields[1]), JsonNode.class);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-            assertThat(response.getBody().path("error").path("code").asText()).isEqualTo("VALIDATION_ERROR");
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                assertThat(response.getBody().path("error").path("code").asText()).isEqualTo("VALIDATION_ERROR");
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            for (String body : List.of(
+                    "{\"username\":123,\"password\":\"password1\"}",
+                    "{\"username\":\"valid-user\",\"password\":12345678}")) {
+                ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                        path, new HttpEntity<>(body, headers), JsonNode.class);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                assertThat(response.getBody().path("error").path("code").asText()).isEqualTo("MALFORMED_REQUEST");
+            }
         }
     }
 
@@ -434,7 +448,7 @@ class ApplicationSmokeTest {
 
         assertThat(register.isObject()).isTrue();
         assertThat(register.path("requestBody").path("content").path("application/json")
-                .path("schema").path("$ref").asText()).endsWith("/RegisterRequest");
+                .path("schema").path("$ref").asText()).endsWith("/CredentialsRequest");
         assertThat(register.path("responses").has("201")).isTrue();
         assertThat(register.path("responses").has("400")).isTrue();
         assertThat(register.path("responses").has("409")).isTrue();
@@ -449,7 +463,7 @@ class ApplicationSmokeTest {
         assertThat(roleSchema.path("enum").toString()).isEqualTo("[\"CUSTOMER\",\"ADMIN\"]");
         assertThat(login.isObject()).isTrue();
         assertThat(login.path("requestBody").path("content").path("application/json")
-                .path("schema").path("$ref").asText()).endsWith("/LoginRequest");
+                .path("schema").path("$ref").asText()).endsWith("/CredentialsRequest");
         assertThat(login.path("responses").has("200")).isTrue();
         assertThat(login.path("responses").has("400")).isTrue();
         assertThat(login.path("responses").has("401")).isTrue();

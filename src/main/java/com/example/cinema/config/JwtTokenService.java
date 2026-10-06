@@ -2,9 +2,7 @@ package com.example.cinema.config;
 
 import com.example.cinema.modules.identity.business.AuthenticatedUser;
 import com.example.cinema.modules.identity.business.User;
-import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import com.nimbusds.jose.jwk.source.JWKSource;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -43,8 +41,7 @@ public class JwtTokenService {
         }
 
         SecretKey key = new SecretKeySpec(secretBytes, "HmacSHA256");
-        JWKSource<SecurityContext> jwkSource = new ImmutableSecret<>(key);
-        this.encoder = new NimbusJwtEncoder(jwkSource);
+        this.encoder = new NimbusJwtEncoder(new ImmutableSecret<>(key));
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
         JwtTimestampValidator timestampValidator = new JwtTimestampValidator(Duration.ZERO);
         timestampValidator.setClock(clock);
@@ -92,11 +89,12 @@ public class JwtTokenService {
 
         Object issuedAtClaim = jwt.getClaims().get("iat");
         Object expiresAtClaim = jwt.getClaims().get("exp");
+        Instant now = clock.instant();
         if (!(issuedAtClaim instanceof Instant issuedAt)
                 || !(expiresAtClaim instanceof Instant expiresAt)
                 || !expiresAt.isAfter(issuedAt)
-                || !expiresAt.isAfter(clock.instant())
-                || issuedAt.isAfter(clock.instant())) {
+                || !expiresAt.isAfter(now)
+                || issuedAt.isAfter(now)) {
             throw new BadJwtException("JWT time claims are invalid");
         }
         return new AuthenticatedUser(userId, role);

@@ -23,14 +23,8 @@ public class IdentityService {
 
     public User register(String rawUsername, String password) {
         String username = AccountPolicy.normalizeUsername(rawUsername);
-        if (!AccountPolicy.isValidUsername(username)) {
+        if (!AccountPolicy.isValidUsername(username) || !AccountPolicy.isValidPassword(password)) {
             throw new InvalidRegistrationException();
-        }
-        if (!AccountPolicy.isValidPassword(password)) {
-            throw new InvalidRegistrationException();
-        }
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new UsernameAlreadyExistsException();
         }
 
         Instant now = Instant.now();

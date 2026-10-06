@@ -2,14 +2,19 @@ package com.example.cinema.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.example.cinema.config.JwtTokenService;
-import com.example.cinema.modules.identity.api.RegisterRequest;
+import com.example.cinema.modules.identity.api.CredentialsRequest;
 import com.example.cinema.modules.identity.business.AuthenticatedUser;
 import com.example.cinema.modules.identity.business.User;
 import com.example.cinema.modules.identity.business.UserRepository;
 import com.example.cinema.modules.identity.business.UsernameAlreadyExistsException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -124,7 +129,7 @@ class PostgreSqlIntegrationTest {
     void registerCreatesCustomerAndDoesNotExposeCredentials() {
         String username = "register-" + UUID.randomUUID();
         String password = " password1 ";
-        assertThat(new RegisterRequest(username, password).toString()).doesNotContain(password);
+        assertThat(new CredentialsRequest(username, password).toString()).doesNotContain(password);
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/auth/register",
                 Map.of("username", " " + username.toUpperCase() + " ", "password", password, "role", "ADMIN"),
@@ -195,6 +200,32 @@ class PostgreSqlIntegrationTest {
         assertThat(duplicate.getBody().path("error").path("code").asText())
                 .isEqualTo("USERNAME_ALREADY_EXISTS");
         assertThat(duplicate.getHeaders().getFirst("X-Request-Id")).isNotBlank();
+    }
+
+    @Test
+    void concurrentRegistrationsCreateOneCustomerAndReturnConflictForTheOther() throws Exception {
+        String username = "concurrent-" + UUID.randomUUID();
+        var start = new CyclicBarrier(2);
+        Callable<ResponseEntity<JsonNode>> register = () -> {
+            start.await(10, TimeUnit.SECONDS);
+            return restTemplate.postForEntity("/api/v1/auth/register",
+                    Map.of("username", " " + username.toUpperCase() + " ", "password", "password1"), JsonNode.class);
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(register);
+            var second = executor.submit(register);
+            var responses = List.of(first.get(30, TimeUnit.SECONDS), second.get(30, TimeUnit.SECONDS));
+
+            assertThat(responses).extracting(ResponseEntity::getStatusCode)
+                    .containsExactlyInAnyOrder(HttpStatus.CREATED, HttpStatus.CONFLICT);
+            JsonNode conflict = responses.stream()
+                    .filter(response -> response.getStatusCode() == HttpStatus.CONFLICT)
+                    .findFirst().orElseThrow().getBody();
+            assertThat(conflict.path("error").path("code").asText()).isEqualTo("USERNAME_ALREADY_EXISTS");
+        }
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users WHERE username = ?", Long.class, username))
+                .isEqualTo(1L);
     }
 
     @Test
