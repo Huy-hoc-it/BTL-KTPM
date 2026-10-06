@@ -1,6 +1,6 @@
 # Cinema Backend
 
-Backend quản lý rạp phim, hiện đang ở giai đoạn dựng nền tảng; các API nghiệp vụ như phim, suất chiếu, đặt vé và tài khoản sẽ được bổ sung theo kế hoạch trong `docs/work_plan.md`.
+Backend quản lý rạp phim. Hiện đã có đăng ký, đăng nhập, JWT Bearer và API xem hồ sơ người dùng; các API phim, suất chiếu và đặt vé đang được triển khai theo kế hoạch trong `docs/work_plan.md`.
 
 ## Kiến trúc
 
@@ -28,16 +28,16 @@ docker compose up -d --wait db
 .\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=local'
 ```
 
-Compose chỉ mở cổng PostgreSQL trên `127.0.0.1:5432`. Profile `local` dùng mặc định `localhost:5432`, database/user/password là `cinema`. Có thể ghi đè bằng các biến `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` và `SERVER_PORT`.
+Compose chỉ mở cổng PostgreSQL trên `127.0.0.1:5432`. Khi chạy bằng Maven, profile `local` chỉ mở API trên `127.0.0.1`; database/user/password mặc định là `cinema`. Có thể ghi đè bằng `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` và `SERVER_PORT`. Nếu chủ động đặt `SERVER_ADDRESS` để mở API ra mạng, hãy đặt `JWT_SECRET` riêng đủ mạnh.
 
 ## Chạy bằng Docker Compose
 
 ```powershell
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 docker compose up --build -d
 ```
 
-Các giá trị trong `.env.example` chỉ dành cho phát triển local; hãy đổi mật khẩu DB nếu dùng ở môi trường khác. Compose khởi động PostgreSQL trước, chờ database healthy rồi mới chạy API. Các địa chỉ kiểm tra:
+Các giá trị trong `.env.example` chỉ dành cho phát triển local; hãy đổi mật khẩu DB nếu dùng ở môi trường khác. Compose khởi động PostgreSQL trước, chờ database healthy rồi mới chạy API. API lắng nghe trên mọi địa chỉ **bên trong container** để Compose chuyển tiếp cổng, nhưng cổng trên máy chỉ mở ở `127.0.0.1:8080`. Các địa chỉ kiểm tra:
 
 `DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` trong `.env` tạo tài khoản Admin demo ở profile `local`. Tài khoản được tạo một lần, mật khẩu phải dài 8–16 ký tự và được lưu bằng BCrypt. Đặt cả hai biến thành rỗng để bỏ qua seeding. Seeder không chạy ở profile `prod`.
 
@@ -45,6 +45,21 @@ Các giá trị trong `.env.example` chỉ dành cho phát triển local; hãy �
 - OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 - Liveness: <http://localhost:8080/actuator/health/liveness>
 - Readiness: <http://localhost:8080/actuator/health/readiness>
+
+### Thử đăng nhập bằng Swagger
+
+Trong `.env.example`, tài khoản Admin demo mặc định là `admin` / `demo-pass-1234`. Sau khi Compose khởi động:
+
+1. Mở Swagger UI, gọi `POST /api/v1/auth/login` với JSON:
+
+   ```json
+   {"username":"admin","password":"demo-pass-1234"}
+   ```
+
+2. Sao chép `data.accessToken` trong response, bấm **Authorize** và dán riêng token (không thêm tiền tố `Bearer`).
+3. Gọi `GET /api/v1/users/me`; response cần có `data.role: "ADMIN"`.
+
+Nếu đã đổi `DEMO_ADMIN_USERNAME` hoặc `DEMO_ADMIN_PASSWORD` trong `.env`, hãy dùng giá trị đó. Để tắt tài khoản demo, đặt cả hai biến thành rỗng. Tài khoản này chỉ dành cho local; API quản trị nghiệp vụ sẽ được thêm cùng các module tương ứng.
 
 Dừng các container nhưng giữ dữ liệu PostgreSQL:
 
