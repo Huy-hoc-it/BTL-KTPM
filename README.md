@@ -54,4 +54,3 @@ docker compose down
 
 - [Đặc tả hệ thống](docs/SPEC.md)
 - [Kế hoạch phân công](docs/work_plan.md)
-- [Các bước dựng codebase](docs/codebase_setup.md)
