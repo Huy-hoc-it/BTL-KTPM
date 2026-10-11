@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.util.UUID;
 import java.time.Instant;
 import java.util.Optional;
+import org.springframework.stereotype.Service;
 
+@Service 
 public class MovieService implements MovieModuleApi {
     private MovieRepository movieRepository;
     
