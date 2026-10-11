@@ -7,7 +7,9 @@ import java.util.ArrayList;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -88,5 +90,40 @@ public class MovieController {
         PaginationMeta meta = new PaginationMeta(page, pageSize, totalItems, totalPages);
         MovieListResponse response = new MovieListResponse(movieResponses, meta);
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/admin/movies/{movieId}")
+    public ResponseEntity<SingleMovieResponse> update(
+            @PathVariable("movieId") UUID movieId,
+            @RequestBody UpdateMovieRequest request) {
+        Optional<Movie> movieOpt = movieService.update(
+                movieId,
+                request.getTitle(),
+                request.getDescription(),
+                request.getDurationMinutes(),
+                request.getAgeRating(),
+                request.getReleaseDate(),
+                request.getPosterUrl(),
+                request.getStatus(),
+                request.hasPosterUrl()
+        );
+        if(movieOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Movie movie = movieOpt.get();
+        MovieResponse movieResponse = toResponse(movie);
+        SingleMovieResponse response = new SingleMovieResponse(movieResponse);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/admin/movies/{movieId}")
+    public ResponseEntity<Void> delete(
+            @PathVariable("movieId") UUID movieId
+    ) {
+        boolean deleted = movieService.softDelete(movieId);
+        if (deleted == false) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
     }
 }
