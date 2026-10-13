@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,7 +28,6 @@ class IdentityServiceTest {
 
     @Test
     void registerNormalizesUsernameAndStoresBCryptHashForCustomer() {
-        when(userRepository.findByUsername("alice")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         Instant before = Instant.now();
 
@@ -70,18 +68,12 @@ class IdentityServiceTest {
     }
 
     @Test
-    void registerRejectsAnExistingNormalizedUsername() {
-        when(userRepository.findByUsername("alice"))
-                .thenReturn(Optional.of(new User(
-                        UUID.randomUUID(), "alice", "existing-hash", User.Role.CUSTOMER,
-                        Instant.now(), Instant.now())));
-        PasswordEncoder unusedEncoder = mock(PasswordEncoder.class);
-        IdentityService service = new IdentityService(userRepository, unusedEncoder);
+    void registerPreservesRepositoryDuplicateUsernameError() {
+        var duplicate = new UsernameAlreadyExistsException();
+        when(userRepository.save(any(User.class))).thenThrow(duplicate);
 
-        assertThatThrownBy(() -> service.register(" Alice ", "password1"))
-                .isInstanceOf(UsernameAlreadyExistsException.class);
-        verify(userRepository, never()).save(any());
-        verify(unusedEncoder, never()).encode(any());
+        assertThatThrownBy(() -> identityService.register(" Alice ", "password1"))
+                .isSameAs(duplicate);
     }
 
     @Test

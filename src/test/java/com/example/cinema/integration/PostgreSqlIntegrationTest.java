@@ -2,14 +2,19 @@ package com.example.cinema.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.example.cinema.config.JwtTokenService;
-import com.example.cinema.modules.identity.api.RegisterRequest;
+import com.example.cinema.modules.identity.api.CredentialsRequest;
 import com.example.cinema.modules.identity.business.AuthenticatedUser;
 import com.example.cinema.modules.identity.business.User;
 import com.example.cinema.modules.identity.business.UserRepository;
 import com.example.cinema.modules.identity.business.UsernameAlreadyExistsException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +25,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -123,7 +129,7 @@ class PostgreSqlIntegrationTest {
     void registerCreatesCustomerAndDoesNotExposeCredentials() {
         String username = "register-" + UUID.randomUUID();
         String password = " password1 ";
-        assertThat(new RegisterRequest(username, password).toString()).doesNotContain(password);
+        assertThat(new CredentialsRequest(username, password).toString()).doesNotContain(password);
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/auth/register",
                 Map.of("username", " " + username.toUpperCase() + " ", "password", password, "role", "ADMIN"),
@@ -197,7 +203,33 @@ class PostgreSqlIntegrationTest {
     }
 
     @Test
-    void loginReturnsSignedBearerTokenForRegisteredUser() {
+    void concurrentRegistrationsCreateOneCustomerAndReturnConflictForTheOther() throws Exception {
+        String username = "concurrent-" + UUID.randomUUID();
+        var start = new CyclicBarrier(2);
+        Callable<ResponseEntity<JsonNode>> register = () -> {
+            start.await(10, TimeUnit.SECONDS);
+            return restTemplate.postForEntity("/api/v1/auth/register",
+                    Map.of("username", " " + username.toUpperCase() + " ", "password", "password1"), JsonNode.class);
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(register);
+            var second = executor.submit(register);
+            var responses = List.of(first.get(30, TimeUnit.SECONDS), second.get(30, TimeUnit.SECONDS));
+
+            assertThat(responses).extracting(ResponseEntity::getStatusCode)
+                    .containsExactlyInAnyOrder(HttpStatus.CREATED, HttpStatus.CONFLICT);
+            JsonNode conflict = responses.stream()
+                    .filter(response -> response.getStatusCode() == HttpStatus.CONFLICT)
+                    .findFirst().orElseThrow().getBody();
+            assertThat(conflict.path("error").path("code").asText()).isEqualTo("USERNAME_ALREADY_EXISTS");
+        }
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users WHERE username = ?", Long.class, username))
+                .isEqualTo(1L);
+    }
+
+    @Test
+    void registerLoginAndCurrentProfileWorkWithPostgreSQL() {
         String username = "login-" + UUID.randomUUID();
         String password = " password1 ";
         ResponseEntity<JsonNode> registration = restTemplate.postForEntity(
@@ -217,6 +249,19 @@ class PostgreSqlIntegrationTest {
         assertThat(jwtTokenService.verify(accessToken)).isEqualTo(
                 new AuthenticatedUser(userId, User.Role.CUSTOMER));
         assertThat(login.getBody().toString()).doesNotContain(password, "passwordHash");
+
+        HttpHeaders bearer = new HttpHeaders();
+        bearer.setBearerAuth(accessToken);
+        ResponseEntity<JsonNode> currentUser = restTemplate.exchange(
+                "/api/v1/users/me", HttpMethod.GET,
+                new HttpEntity<>(bearer), JsonNode.class);
+        assertThat(currentUser.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode profile = currentUser.getBody().path("data");
+        assertThat(profile.path("id").asText()).isEqualTo(userId.toString());
+        assertThat(profile.path("username").asText()).isEqualTo(username);
+        assertThat(profile.path("role").asText()).isEqualTo("CUSTOMER");
+        assertThat(profile.size()).isEqualTo(3);
+        assertThat(currentUser.getBody().toString()).doesNotContain(password, "passwordHash", "createdAt");
     }
 
     @Test

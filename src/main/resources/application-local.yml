@@ -7,6 +7,9 @@ spring:
     username: ${DB_USERNAME:cinema}
     password: ${DB_PASSWORD:cinema}
 
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+
 cinema:
   jwt:
     secret: ${JWT_SECRET:local-only-change-me-before-any-real-deployment-2026}

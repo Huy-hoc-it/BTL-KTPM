@@ -7,8 +7,10 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -34,6 +36,14 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    JwtTokenService jwtTokenService(
+            @Value("${cinema.jwt.secret}") String secret,
+            @Value("${cinema.jwt.expiration-seconds}") long expirationSeconds
+    ) {
+        return new JwtTokenService(secret, expirationSeconds, Clock.systemUTC());
     }
 
     @Bean
