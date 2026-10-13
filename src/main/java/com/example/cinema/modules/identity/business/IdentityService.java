@@ -23,14 +23,8 @@ public class IdentityService {
 
     public User register(String rawUsername, String password) {
         String username = AccountPolicy.normalizeUsername(rawUsername);
-        if (!AccountPolicy.isValidUsername(username)) {
+        if (!AccountPolicy.isValidUsername(username) || !AccountPolicy.isValidPassword(password)) {
             throw new InvalidRegistrationException();
-        }
-        if (!AccountPolicy.isValidPassword(password)) {
-            throw new InvalidRegistrationException();
-        }
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new UsernameAlreadyExistsException();
         }
 
         Instant now = Instant.now();
@@ -53,5 +47,12 @@ public class IdentityService {
         }
         log.info("Login succeeded userId={}", user.id());
         return new AuthenticatedUser(user.id(), user.role());
+    }
+
+    public User findAuthenticatedUser(UUID userId) {
+        if (userId == null) {
+            throw new AuthenticatedUserNotFoundException();
+        }
+        return userRepository.findById(userId).orElseThrow(AuthenticatedUserNotFoundException::new);
     }
 }

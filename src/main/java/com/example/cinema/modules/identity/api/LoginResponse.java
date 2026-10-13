@@ -5,11 +5,10 @@ public record LoginResponse(Data data) {
         return new LoginResponse(new Data(accessToken, "Bearer", expiresIn));
     }
 
-    @Override
-    public String toString() {
-        return "LoginResponse[data=redacted]";
-    }
-
     public record Data(String accessToken, String tokenType, long expiresIn) {
+        @Override
+        public String toString() {
+            return "Data[redacted]";
+        }
     }
 }
