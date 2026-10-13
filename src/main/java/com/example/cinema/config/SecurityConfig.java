@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -41,6 +42,7 @@ public class SecurityConfig {
                             "/actuator/health/liveness",
                             "/actuator/health/readiness"
                     ).permitAll();
+                    authorize.requestMatchers(HttpMethod.GET, "/api/v1/showtimes", "/api/v1/showtimes/*").permitAll();
                     if (docsPublic) {
                         authorize.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
                     }

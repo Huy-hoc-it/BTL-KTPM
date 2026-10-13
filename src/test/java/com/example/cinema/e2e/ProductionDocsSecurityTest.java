@@ -13,7 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @SpringBootTest(properties = {
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration",
-        "management.endpoint.health.group.readiness.include=readinessState"
+        "management.endpoint.health.group.readiness.include=readinessState",
+        "cinema.movie.enabled=false",
+        "cinema.theater.enabled=false"
 })
 @ActiveProfiles("prod")
 class ProductionDocsSecurityTest {
