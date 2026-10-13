@@ -6,12 +6,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import jakarta.persistence.EntityManagerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 @Repository
-@ConditionalOnBean(EntityManagerFactory.class)
+@ConditionalOnProperty(name = "cinema.theater.enabled", havingValue = "true", matchIfMissing = true)
 class AuditoriumRepositoryAdapter implements AuditoriumRepository {
 
     private final AuditoriumJpaRepository auditoriumRepository;
@@ -37,7 +36,8 @@ class AuditoriumRepositoryAdapter implements AuditoriumRepository {
 
     @Override
     public List<Auditorium> findActive() {
-        return auditoriumRepository.findAllByDeletedAtIsNullOrderByNameAsc().stream()
+        return auditoriumRepository.findAllByStatusAndDeletedAtIsNullOrderByNameAsc(
+                        com.example.cinema.modules.theater.business.AuditoriumStatus.ACTIVE).stream()
                 .map(TheaterDataMapper::toBusiness)
                 .toList();
     }

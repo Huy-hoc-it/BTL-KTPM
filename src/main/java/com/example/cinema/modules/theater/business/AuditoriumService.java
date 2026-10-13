@@ -74,6 +74,10 @@ public class AuditoriumService {
         return auditoriumRepository.findActive();
     }
 
+    public List<Seat> findSeats(UUID auditoriumId) {
+        return seatRepository.findByAuditoriumId(auditoriumId);
+    }
+
     @Transactional
     public void softDelete(UUID auditoriumId) {
         Auditorium auditorium = auditoriumRepository.findById(auditoriumId)

@@ -18,6 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration",
         "management.endpoint.health.group.readiness.include=readinessState",
+        "cinema.movie.enabled=false",
+        "cinema.theater.enabled=false",
         "cinema.jwt.secret=test-only-jwt-secret-for-production-profile-test",
         "cinema.jwt.expiration-seconds=3600"
 })

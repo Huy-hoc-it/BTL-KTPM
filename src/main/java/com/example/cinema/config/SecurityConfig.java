@@ -49,7 +49,9 @@ public class SecurityConfig {
                 paths.matcher(HttpMethod.POST, "/api/v1/auth/register"),
                 paths.matcher(HttpMethod.POST, "/api/v1/auth/login"),
                 paths.matcher(HttpMethod.GET, "/actuator/health/liveness"),
-                paths.matcher(HttpMethod.GET, "/actuator/health/readiness")));
+                paths.matcher(HttpMethod.GET, "/actuator/health/readiness"),
+                paths.matcher(HttpMethod.GET, "/api/v1/showtimes"),
+                paths.matcher(HttpMethod.GET, "/api/v1/showtimes/*")));
         if (docsPublic) {
             publicMatchers.addAll(List.of(
                     paths.matcher("/swagger-ui.html"), paths.matcher("/swagger-ui/**"),
