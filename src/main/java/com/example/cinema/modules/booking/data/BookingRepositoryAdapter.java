@@ -3,7 +3,6 @@ package com.example.cinema.modules.booking.data;
 import com.example.cinema.modules.booking.business.Booking;
 import com.example.cinema.modules.booking.business.BookingRepository;
 import com.example.cinema.modules.booking.business.bookingSeat;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +27,7 @@ class BookingRepositoryAdapter implements BookingRepository {
     public Booking save(Booking booking) {
         bookingJpaRepository.save(new BookingEntity(
                 booking.getBookingId(), booking.getUserId(), booking.getShowtimeId(),
-                booking.getTotalAmount(), Instant.now()));
+                booking.getTotalAmount(), booking.getCreatedAt(), booking.getPaymentStatus()));
 
         List<BookingSeatEntity> seatEntities = booking.getSeats().stream()
                 .map(seat -> new BookingSeatEntity(
@@ -41,14 +40,19 @@ class BookingRepositoryAdapter implements BookingRepository {
 
     @Override
     public Optional<Booking> findById(UUID bookingId) {
-        return bookingJpaRepository.findById(bookingId).map(entity -> {
-            List<bookingSeat> seats = bookingSeatJpaRepository.findAllByBookingId(bookingId).stream()
-                    .map(seat -> new bookingSeat(seat.getSeatId(), seat.getPrice()))
-                    .toList();
-            return new Booking(
-                    entity.getId(), entity.getUserId(), entity.getShowtimeId(),
-                    seats, entity.getTotalAmount());
-        });
+        return bookingJpaRepository.findById(bookingId).map(this::toBooking);
+    }
+
+    @Override
+    public Optional<Booking> findByIdAndUserId(UUID bookingId, UUID userId) {
+        return bookingJpaRepository.findByIdAndUserId(bookingId, userId).map(this::toBooking);
+    }
+
+    @Override
+    public List<Booking> findAllByUserId(UUID userId) {
+        return bookingJpaRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(this::toBooking)
+                .toList();
     }
 
     @Override
@@ -61,5 +65,13 @@ class BookingRepositoryAdapter implements BookingRepository {
     public void deleteById(UUID bookingId) {
         bookingSeatJpaRepository.deleteAllByBookingId(bookingId);
         bookingJpaRepository.deleteById(bookingId);
+    }
+
+    private Booking toBooking(BookingEntity entity) {
+        List<bookingSeat> seats = bookingSeatJpaRepository.findAllByBookingId(entity.getId()).stream()
+                .map(seat -> new bookingSeat(seat.getSeatId(), seat.getPrice()))
+                .toList();
+        return new Booking(entity.getId(), entity.getUserId(), entity.getShowtimeId(), seats,
+                entity.getTotalAmount(), entity.getCreatedAt(), entity.getPaymentStatus());
     }
 }

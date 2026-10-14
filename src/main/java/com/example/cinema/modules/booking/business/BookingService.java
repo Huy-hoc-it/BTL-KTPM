@@ -75,6 +75,21 @@ public class BookingService {
         bookingRepository.deleteById(booking.getBookingId());
     }
 
+    public List<Booking> getBookingsByUserId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId must not be null");
+        }
+        return bookingRepository.findAllByUserId(userId);
+    }
+
+    public Booking getBookingByUserId(UUID userId, UUID bookingId) {
+        if (userId == null || bookingId == null) {
+            throw new IllegalArgumentException("userId and bookingId must not be null");
+        }
+        return bookingRepository.findByIdAndUserId(bookingId, userId)
+                .orElseThrow(() -> new BookingNotFoundException(bookingId));
+    }
+
     private BigDecimal getTotalAmount(List<bookingSeat> seats) {
         BigDecimal total = BigDecimal.ZERO;
         for (bookingSeat seat : seats) {
