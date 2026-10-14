@@ -1,10 +1,11 @@
 package com.example.cinema.modules.booking.business;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface BookingRepository {
     Booking save(Booking booking);
-    void delete(Booking booking);
-    void query(Booking booking);
-    UUID query(UUID seatID, UUID showTimeID);
+    Optional<Booking> findById(UUID bookingId);
+    boolean existsByShowtimeIdAndSeatId(UUID showtimeId, UUID seatId);
+    void deleteById(UUID bookingId);
 }

@@ -18,7 +18,17 @@ public class Booking {
             List<bookingSeat> seats,
             BigDecimal totalAmount
     ) {
-        this.bookingId = UUID.randomUUID();
+        this(UUID.randomUUID(), userId, showtimeId, seats, totalAmount);
+    }
+
+    public Booking(
+            UUID bookingId,
+            UUID userId,
+            UUID showtimeId,
+            List<bookingSeat> seats,
+            BigDecimal totalAmount
+    ) {
+        this.bookingId = bookingId;
         this.userId = userId;
         this.showtimeId = showtimeId;
         this.seats = List.copyOf(seats);

@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SeatJpaRepository extends JpaRepository<SeatEntity, UUID> {
 
     List<SeatEntity> findAllByAuditoriumIdOrderByRowLabelAscSeatNumberAsc(UUID auditoriumId);
+
+    List<SeatEntity> findAllByIdIn(List<UUID> seatIds);
 }

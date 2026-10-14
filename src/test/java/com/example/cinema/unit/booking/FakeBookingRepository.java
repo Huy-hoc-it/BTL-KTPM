@@ -7,6 +7,7 @@ import com.example.cinema.modules.booking.business.bookingSeat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 class FakeBookingRepository implements BookingRepository {
@@ -31,19 +32,21 @@ class FakeBookingRepository implements BookingRepository {
     }
 
     @Override
-    public void delete(Booking booking) {
-        bookingsById.remove(booking.getBookingId());
-        removeActiveSeats(booking);
+    public Optional<Booking> findById(UUID bookingId) {
+        return Optional.ofNullable(bookingsById.get(bookingId));
     }
 
     @Override
-    public void query(Booking booking) {
-        // This temporary repository interface contains this method; it is not used by BookingService.
+    public boolean existsByShowtimeIdAndSeatId(UUID showtimeId, UUID seatId) {
+        return activeBookingBySeat.containsKey(new SeatKey(showtimeId, seatId));
     }
 
     @Override
-    public UUID query(UUID seatId, UUID showtimeId) {
-        return activeBookingBySeat.get(new SeatKey(showtimeId, seatId));
+    public void deleteById(UUID bookingId) {
+        Booking booking = bookingsById.remove(bookingId);
+        if (booking != null) {
+            removeActiveSeats(booking);
+        }
     }
 
     int getBookingCount() {

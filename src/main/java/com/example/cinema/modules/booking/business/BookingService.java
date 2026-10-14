@@ -1,10 +1,10 @@
 package com.example.cinema.modules.booking.business;
 
-import com.example.cinema.modules.theater.business.SeatSnapshot;
-import com.example.cinema.modules.theater.business.SeatType;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi;
-import com.example.cinema.modules.theater.business.ShowtimeSnapshot;
-import com.example.cinema.modules.theater.business.ShowtimeStatus;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatKind;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatSnapshot;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeSnapshot;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +52,7 @@ public class BookingService {
         List<SeatSnapshot> seatSnapshots = showtimeModuleApi.getSeatSnapshots(seatIds);
 
         validateShowtime(showtime, showtimeId);
-        validateSeats(seatSnapshots, seatIds, showtime.getAuditoriumId());
+        validateSeats(showtime, seatSnapshots, seatIds);
         validateSeatAvailable(seatIds, showtimeId);
 
         List<bookingSeat> bookingSeats = createBookingSeats(showtime, seatSnapshots);
@@ -64,7 +64,7 @@ public class BookingService {
 
     private void validateSeatAvailable(List<UUID> seatIds, UUID showtimeId) {
         for (UUID seatId : seatIds) {
-            if (bookingRepository.query(seatId, showtimeId) != null) {
+            if (bookingRepository.existsByShowtimeIdAndSeatId(showtimeId, seatId)) {
                 throw new IllegalArgumentException("Seat has already been booked");
             }
         }
@@ -72,7 +72,7 @@ public class BookingService {
 
     @Transactional
     public void deleteBooking(Booking booking) {
-        bookingRepository.delete(booking);
+        bookingRepository.deleteById(booking.getBookingId());
     }
 
     private BigDecimal getTotalAmount(List<bookingSeat> seats) {
@@ -89,8 +89,8 @@ public class BookingService {
     ) {
         List<bookingSeat> bookingSeats = new ArrayList<>();
         for (SeatSnapshot seatSnapshot : seatSnapshots) {
-            BigDecimal price = calculateSeatPrice(showtime.getBasePrice(), seatSnapshot.getType());
-            bookingSeats.add(new bookingSeat(seatSnapshot.getSeatId(), price));
+            BigDecimal price = calculateSeatPrice(showtime.basePrice(), seatSnapshot.type());
+            bookingSeats.add(new bookingSeat(seatSnapshot.seatId(), price));
         }
         return bookingSeats;
     }
@@ -118,51 +118,55 @@ public class BookingService {
     }
 
     private void validateShowtime(ShowtimeSnapshot showtime, UUID showtimeId) {
-        if (showtime == null || !showtimeId.equals(showtime.getShowtimeId())) {
+        if (showtime == null || !showtimeId.equals(showtime.showtimeId())) {
             throw new IllegalArgumentException("Showtime was not found");
         }
-        if (showtime.getStatus() != ShowtimeStatus.SCHEDULED) {
+        if (showtime.status() != ShowtimeState.SCHEDULED) {
             throw new IllegalArgumentException("Showtime is not available for booking");
         }
-        if (showtime.getStartsAt() == null || !showtime.getStartsAt().isAfter(clock.instant())) {
+        if (showtime.startsAt() == null || !showtime.startsAt().isAfter(clock.instant())) {
             throw new IllegalArgumentException("Showtime has already started");
         }
-        if (showtime.getAuditoriumId() == null) {
+        if (showtime.auditoriumId() == null) {
             throw new IllegalArgumentException("Showtime auditorium is missing");
         }
-        if (showtime.getBasePrice() == null || showtime.getBasePrice().signum() <= 0) {
+        if (showtime.basePrice() == null || showtime.basePrice().signum() <= 0) {
             throw new IllegalArgumentException("Showtime base price must be positive");
         }
     }
 
     private void validateSeats(
+            ShowtimeSnapshot showtime,
             List<SeatSnapshot> seatSnapshots,
-            List<UUID> requestedSeatIds,
-            UUID auditoriumId
+            List<UUID> requestedSeatIds
     ) {
         if (seatSnapshots == null || seatSnapshots.size() != requestedSeatIds.size()) {
             throw new IllegalArgumentException("Theater did not return every requested seat");
         }
 
         HashSet<UUID> returnedSeatIds = new HashSet<>();
+        HashSet<UUID> showtimeSeatIds = new HashSet<>();
+        for (SeatSnapshot seat : showtime.seats()) {
+            showtimeSeatIds.add(seat.seatId());
+        }
         for (SeatSnapshot seatSnapshot : seatSnapshots) {
             if (seatSnapshot == null
-                    || seatSnapshot.getSeatId() == null
-                    || !requestedSeatIds.contains(seatSnapshot.getSeatId())
-                    || !returnedSeatIds.add(seatSnapshot.getSeatId())) {
+                    || seatSnapshot.seatId() == null
+                    || !requestedSeatIds.contains(seatSnapshot.seatId())
+                    || !returnedSeatIds.add(seatSnapshot.seatId())) {
                 throw new IllegalArgumentException("Theater returned an invalid seat list");
             }
-            if (!auditoriumId.equals(seatSnapshot.getAuditoriumId())) {
+            if (!showtimeSeatIds.contains(seatSnapshot.seatId())) {
                 throw new IllegalArgumentException("Seat does not belong to showtime auditorium");
             }
-            if (seatSnapshot.getType() == null) {
+            if (seatSnapshot.type() == null) {
                 throw new IllegalArgumentException("Seat type is missing");
             }
         }
     }
 
-    private BigDecimal calculateSeatPrice(BigDecimal basePrice, SeatType seatType) {
-        BigDecimal price = seatType == SeatType.VIP
+    private BigDecimal calculateSeatPrice(BigDecimal basePrice, SeatKind seatType) {
+        BigDecimal price = seatType == SeatKind.VIP
                 ? basePrice.multiply(VIP_MULTIPLIER)
                 : basePrice;
         return price.setScale(2, RoundingMode.HALF_UP);
