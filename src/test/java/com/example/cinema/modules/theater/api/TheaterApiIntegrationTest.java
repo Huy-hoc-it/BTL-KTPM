@@ -1,10 +1,10 @@
 package com.example.cinema.modules.theater.api;
 
-import com.example.cinema.modules.movie.business.MovieAgeRating;
+import com.example.cinema.modules.movie.business.AgeRating;
 import com.example.cinema.modules.movie.business.MovieModuleApi;
 import com.example.cinema.modules.movie.business.MovieStatus;
 import com.example.cinema.modules.movie.data.MovieEntity;
-import com.example.cinema.modules.movie.data.MovieJpaRepository;
+import com.example.cinema.modules.movie.data.SpringDataMovieRepository;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +62,7 @@ class TheaterApiIntegrationTest {
     private MovieModuleApi movieModuleApi;
 
     @Autowired
-    private MovieJpaRepository movieRepository;
+    private SpringDataMovieRepository movieRepository;
 
     @BeforeEach
     void persistMovieUsedByTheaterApi() {
@@ -72,13 +72,13 @@ class TheaterApiIntegrationTest {
                 "Integration Movie",
                 "A real movie row used by the Theater API integration test.",
                 MOVIE_DURATION_MINUTES,
-                MovieAgeRating.P,
+                AgeRating.P,
                 LocalDate.now(ZoneOffset.UTC),
                 null,
                 MovieStatus.NOW_SHOWING,
-                null,
                 now,
-                now));
+                now,
+                null));
         assertThat(movieModuleApi.findMovieForScheduling(MOVIE_ID))
                 .contains(new MovieModuleApi.MovieSnapshot(MOVIE_ID, MOVIE_DURATION_MINUTES));
         org.assertj.core.api.Assertions.assertThat(showtimeModuleApi).isNotNull();
@@ -199,7 +199,7 @@ class TheaterApiIntegrationTest {
                 "Deleted Movie",
                 "This movie has been soft deleted.",
                 MOVIE_DURATION_MINUTES,
-                MovieAgeRating.P,
+                AgeRating.P,
                 LocalDate.now(ZoneOffset.UTC),
                 null,
                 MovieStatus.NOW_SHOWING,
