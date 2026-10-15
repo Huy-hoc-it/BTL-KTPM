@@ -102,6 +102,44 @@ public class ShowtimeService implements ShowtimeModuleApi {
     }
 
     @Override
+    public ShowtimeSnapshot getShowtimeSnapshot(UUID showtimeId) {
+        if (showtimeId == null) {
+            return null;
+        }
+        return showtimeRepository.findById(showtimeId)
+                .map(showtime -> new ShowtimeSnapshot(
+                        showtime.id(),
+                        showtime.auditoriumId(),
+                        showtime.startsAt(),
+                        showtime.basePrice(),
+                        switch (showtime.status()) {
+                            case SCHEDULED -> ShowtimeState.SCHEDULED;
+                            case CANCELLED -> ShowtimeState.CANCELLED;
+                            case FINISHED -> ShowtimeState.FINISHED;
+                        },
+                        seatRepository.findByAuditoriumId(showtime.auditoriumId()).stream()
+                                .map(seat -> new SeatSnapshot(
+                                        seat.id(),
+                                        seat.rowLabel(),
+                                        seat.seatNumber(),
+                                        seat.type() == SeatType.VIP ? SeatKind.VIP : SeatKind.STANDARD))
+                                .toList()))
+                .orElse(null);
+    }
+
+    @Override
+    public List<SeatSnapshot> getSeatSnapshots(List<UUID> seatIds) {
+        if (seatIds == null || seatIds.isEmpty()) {
+            return List.of();
+        }
+        return seatRepository.findByIds(seatIds).stream()
+                .map(seat -> new SeatSnapshot(
+                        seat.id(), seat.rowLabel(), seat.seatNumber(),
+                        seat.type() == SeatType.VIP ? SeatKind.VIP : SeatKind.STANDARD))
+                .toList();
+    }
+
+    @Override
     public java.util.Optional<ShowtimeSnapshot> findShowtime(UUID showtimeId) {
         return showtimeRepository.findById(showtimeId).map(showtime -> {
             List<SeatSnapshot> seats = seatRepository.findByAuditoriumId(showtime.auditoriumId()).stream()

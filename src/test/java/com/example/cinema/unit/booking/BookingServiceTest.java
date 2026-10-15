@@ -2,10 +2,10 @@ package com.example.cinema.unit.booking;
 
 import com.example.cinema.modules.booking.business.Booking;
 import com.example.cinema.modules.booking.business.BookingService;
-import com.example.cinema.modules.theater.business.SeatSnapshot;
-import com.example.cinema.modules.theater.business.SeatType;
-import com.example.cinema.modules.theater.business.ShowtimeSnapshot;
-import com.example.cinema.modules.theater.business.ShowtimeStatus;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatKind;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatSnapshot;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeSnapshot;
+import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,12 +43,13 @@ class BookingServiceTest {
                 showtimeId,
                 auditoriumId,
                 NOW.plusSeconds(3_600),
-                ShowtimeStatus.SCHEDULED,
-                new BigDecimal("100000.00")
+                new BigDecimal("100000.00"),
+                ShowtimeState.SCHEDULED,
+                List.of()
         ));
         theaterApi.setSeats(List.of(
-                new SeatSnapshot(standardSeatId, auditoriumId, SeatType.STANDARD),
-                new SeatSnapshot(vipSeatId, auditoriumId, SeatType.VIP)
+                new SeatSnapshot(standardSeatId, "A", 1, SeatKind.STANDARD),
+                new SeatSnapshot(vipSeatId, "A", 2, SeatKind.VIP)
         ));
         bookingService = new BookingService(
                 bookingRepository,
@@ -109,8 +110,9 @@ class BookingServiceTest {
                 showtimeId,
                 auditoriumId,
                 NOW.plusSeconds(3_600),
-                ShowtimeStatus.CANCELLED,
-                new BigDecimal("100000.00")
+                new BigDecimal("100000.00"),
+                ShowtimeState.CANCELLED,
+                List.of()
         ));
 
         assertThrows(IllegalArgumentException.class,
@@ -123,8 +125,9 @@ class BookingServiceTest {
                 showtimeId,
                 auditoriumId,
                 NOW,
-                ShowtimeStatus.SCHEDULED,
-                new BigDecimal("100000.00")
+                new BigDecimal("100000.00"),
+                ShowtimeState.SCHEDULED,
+                List.of()
         ));
 
         assertThrows(IllegalArgumentException.class,
@@ -132,9 +135,9 @@ class BookingServiceTest {
     }
 
     @Test
-    void rejectsSeatFromAnotherAuditorium() {
+    void rejectsSeatThatDoesNotBelongToShowtime() {
         theaterApi.setSeats(List.of(
-                new SeatSnapshot(standardSeatId, UUID.randomUUID(), SeatType.STANDARD)
+                new SeatSnapshot(UUID.randomUUID(), "A", 1, SeatKind.STANDARD)
         ));
 
         assertThrows(IllegalArgumentException.class,

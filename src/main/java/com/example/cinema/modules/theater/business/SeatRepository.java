@@ -8,4 +8,8 @@ public interface SeatRepository {
     List<Seat> saveAll(List<Seat> seats);
 
     List<Seat> findByAuditoriumId(UUID auditoriumId);
+
+    default List<Seat> findByIds(List<UUID> seatIds) {
+        return List.of();
+    }
 }
