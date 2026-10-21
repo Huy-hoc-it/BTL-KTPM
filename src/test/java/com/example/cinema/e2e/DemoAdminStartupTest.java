@@ -29,6 +29,9 @@ import static org.mockito.Mockito.when;
         properties = {
                 "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration",
                 "management.endpoint.health.group.readiness.include=readinessState",
+                "cinema.movie.enabled=false",
+                "cinema.theater.enabled=false",
+                "cinema.booking.enabled=false",
                 "DEMO_ADMIN_USERNAME=startup-admin",
                 "DEMO_ADMIN_PASSWORD=demo-pass-1234"
         }

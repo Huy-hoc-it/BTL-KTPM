@@ -65,7 +65,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration",
                 "management.endpoint.health.group.readiness.include=readinessState",
                 "cinema.movie.enabled=false",
-                "cinema.theater.enabled=false"
+                "cinema.theater.enabled=false",
+                "cinema.booking.enabled=false"
         }
 )
 @ActiveProfiles("test")
