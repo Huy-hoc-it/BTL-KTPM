@@ -3,16 +3,21 @@ package com.example.cinema.modules.movie.api;
 import com.example.cinema.modules.movie.business.MovieStatus;
 import java.time.LocalDate;
 import com.example.cinema.modules.movie.business.AgeRating;
+import com.example.cinema.modules.movie.business.MovieField;
+import java.util.EnumSet;
+import java.util.Set;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public class UpdateMovieRequest {
     private String title;
     private String description;
     private Integer durationMinutes;
     private AgeRating ageRating;
+    @JsonDeserialize(using = MovieDateDeserializer.class)
     private LocalDate releaseDate;
     private String posterUrl;
     private MovieStatus status;
-    private boolean posterUrlProvided;
+    private final Set<MovieField> providedFields = EnumSet.noneOf(MovieField.class);
 
     public UpdateMovieRequest() {
     }
@@ -23,6 +28,7 @@ public class UpdateMovieRequest {
   
     public void setTitle(String title) {
         this.title = title;
+        providedFields.add(MovieField.TITLE);
     }
 
     public String getDescription() {
@@ -31,6 +37,7 @@ public class UpdateMovieRequest {
 
     public void setDescription(String description) {
         this.description = description;
+        providedFields.add(MovieField.DESCRIPTION);
     }
 
     public Integer getDurationMinutes() {
@@ -39,6 +46,7 @@ public class UpdateMovieRequest {
 
     public void setDurationMinutes(Integer durationMinutes) {
         this.durationMinutes = durationMinutes;
+        providedFields.add(MovieField.DURATION_MINUTES);
     }
 
     public AgeRating getAgeRating() {
@@ -47,6 +55,7 @@ public class UpdateMovieRequest {
 
     public void setAgeRating(AgeRating ageRating) {
         this.ageRating = ageRating;
+        providedFields.add(MovieField.AGE_RATING);
     }
 
     public LocalDate getReleaseDate() {
@@ -55,6 +64,7 @@ public class UpdateMovieRequest {
 
     public void setReleaseDate(LocalDate releaseDate) {
         this.releaseDate = releaseDate;
+        providedFields.add(MovieField.RELEASE_DATE);
     }
 
     public String getPosterUrl() {
@@ -63,7 +73,7 @@ public class UpdateMovieRequest {
 
     public void setPosterUrl(String posterUrl) {
         this.posterUrl = posterUrl;
-        this.posterUrlProvided = true;
+        providedFields.add(MovieField.POSTER_URL);
     }
 
     public MovieStatus getStatus() {
@@ -72,9 +82,12 @@ public class UpdateMovieRequest {
 
     public void setStatus(MovieStatus status) {
         this.status = status;
+        providedFields.add(MovieField.STATUS);
     }
 
     public boolean hasPosterUrl() {
-        return posterUrlProvided;
+        return providedFields.contains(MovieField.POSTER_URL);
     }
+
+    public Set<MovieField> providedFields() { return Set.copyOf(providedFields); }
 }

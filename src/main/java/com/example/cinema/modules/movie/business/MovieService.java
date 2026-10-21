@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +18,9 @@ public class MovieService implements MovieModuleApi {
         this.movieRepository = movieRepository;
     }
 
-    public Movie create(String title, String description, int durationMinutes, AgeRating ageRating, LocalDate releaseDate, String posterUrl, MovieStatus status) {
+    @Transactional
+    public Movie create(String title, String description, Integer durationMinutes, AgeRating ageRating, LocalDate releaseDate, String posterUrl, MovieStatus status) {
+        MovieValidation.validate(title, description, durationMinutes, ageRating, releaseDate, posterUrl, status);
         UUID id = UUID.randomUUID();
         Instant createdAt = Instant.now();
         Movie movie = new Movie(id, title, description, durationMinutes, ageRating, releaseDate, posterUrl, status, createdAt, createdAt, null);
@@ -32,6 +35,7 @@ public class MovieService implements MovieModuleApi {
     }
 
     public MoviePage list(int page, int pageSize, MovieStatus status) {
+        MovieValidation.validatePage(page, pageSize);
         return movieRepository.findUndeleted(page, pageSize, status);
     }
 
@@ -65,41 +69,43 @@ public class MovieService implements MovieModuleApi {
             LocalDate releaseDate,
             String posterUrl,
             MovieStatus status,
-            boolean posterUrlProvided) {
+            Set<MovieField> providedFields) {
+        MovieValidation.validatePatch(title, description, durationMinutes, ageRating, releaseDate, posterUrl, status, providedFields);
         Optional<Movie> movieOpt = movieRepository.findUndeletedById(movieId);
         if (movieOpt.isEmpty()) {
             return Optional.empty();
         }
         Movie oldmovie = movieOpt.get();
         String newTitle = oldmovie.getTitle();
-        if(title != null) {
+        if(providedFields.contains(MovieField.TITLE)) {
             newTitle = title;
         }
         String newDescription = oldmovie.getDescription();
-        if(description != null) {
+        if(providedFields.contains(MovieField.DESCRIPTION)) {
             newDescription = description;
         }  
         Integer newDurationMinutes = oldmovie.getDurationMinutes();
-        if(durationMinutes != null) {
+        if(providedFields.contains(MovieField.DURATION_MINUTES)) {
             newDurationMinutes = durationMinutes;
         }
         AgeRating newAgeRating = oldmovie.getAgeRating();
-        if(ageRating != null) {
+        if(providedFields.contains(MovieField.AGE_RATING)) {
             newAgeRating = ageRating;
         }
         LocalDate newReleaseDate = oldmovie.getReleaseDate();
-        if(releaseDate != null) {
+        if(providedFields.contains(MovieField.RELEASE_DATE)) {
             newReleaseDate = releaseDate;
         }
         String newPosterUrl = oldmovie.getPosterUrl();
-        if(posterUrlProvided) {
+        if(providedFields.contains(MovieField.POSTER_URL)) {
             newPosterUrl = posterUrl;
         }
         MovieStatus newStatus = oldmovie.getStatus();
-        if(status != null) {
+        if(providedFields.contains(MovieField.STATUS)) {
             newStatus = status;
         }  
         Instant newcreatedAt = oldmovie.getCreatedAt();
+        MovieValidation.validate(newTitle, newDescription, newDurationMinutes, newAgeRating, newReleaseDate, newPosterUrl, newStatus);
         Instant newupdatedAt = Instant.now();
         Instant newdeletedAt = oldmovie.getDeletedAt();
         Movie newmovie = new Movie(movieId, newTitle, newDescription, newDurationMinutes, newAgeRating, newReleaseDate, newPosterUrl, newStatus, newcreatedAt, newupdatedAt, newdeletedAt);

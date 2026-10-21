@@ -6,6 +6,8 @@ import com.example.cinema.modules.movie.business.MovieStatus;
 import java.util.ArrayList;
 
 import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
+import com.example.cinema.modules.movie.business.MovieNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -49,7 +51,7 @@ public class MovieController {
     }
 
     @PostMapping("/admin/movies")
-    public ResponseEntity<SingleMovieResponse> create(@RequestBody CreateMovieRequest request) {
+    public ResponseEntity<SingleMovieResponse> create(@Valid @RequestBody CreateMovieRequest request) {
         Movie movie = movieService.create(
             request.getTitle(),
             request.getDescription(),
@@ -68,7 +70,7 @@ public class MovieController {
     public ResponseEntity<SingleMovieResponse> getById(@PathVariable("movieId") UUID movieId) {
         Optional<Movie> movieOpt = movieService.getById(movieId);
         if (movieOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new MovieNotFoundException();
         }
         Movie movie = movieOpt.get();
         MovieResponse movieResponse = toResponse(movie);
@@ -107,10 +109,10 @@ public class MovieController {
                 request.getReleaseDate(),
                 request.getPosterUrl(),
                 request.getStatus(),
-                request.hasPosterUrl()
+                request.providedFields()
         );
         if(movieOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            throw new MovieNotFoundException();
         }
         Movie movie = movieOpt.get();
         MovieResponse movieResponse = toResponse(movie);
@@ -124,7 +126,7 @@ public class MovieController {
     ) {
         boolean deleted = movieService.softDelete(movieId);
         if (deleted == false) {
-            return ResponseEntity.notFound().build();
+            throw new MovieNotFoundException();
         }
         return ResponseEntity.noContent().build();
     }
