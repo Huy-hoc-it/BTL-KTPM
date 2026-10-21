@@ -30,4 +30,14 @@ class SeatRepositoryAdapter implements SeatRepository {
                 .map(TheaterDataMapper::toBusiness)
                 .toList();
     }
+
+    @Override
+    public List<Seat> findByIds(List<UUID> seatIds) {
+        if (seatIds == null || seatIds.isEmpty()) {
+            return List.of();
+        }
+        return seatRepository.findAllByIdIn(seatIds).stream()
+                .map(TheaterDataMapper::toBusiness)
+                .toList();
+    }
 }

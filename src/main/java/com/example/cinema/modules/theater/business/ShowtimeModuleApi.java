@@ -13,6 +13,22 @@ import java.util.UUID;
 public interface ShowtimeModuleApi {
 
     /**
+     * Returns only showtime data required by Booking. Returns {@code null}
+     * when the showtime does not exist, matching the Booking module contract.
+     */
+    default ShowtimeSnapshot getShowtimeSnapshot(UUID showtimeId) {
+        return null;
+    }
+
+    /**
+     * Returns the existing seats whose IDs were requested by Booking.
+     * The returned list may be shorter than {@code seatIds} when an ID is unknown.
+     */
+    default List<SeatSnapshot> getSeatSnapshots(List<UUID> seatIds) {
+        return List.of();
+    }
+
+    /**
      * Finds a showtime snapshot without exposing Theater persistence models.
      *
      * @param showtimeId showtime identifier
