@@ -173,7 +173,8 @@ public class BookingService {
                     || !returnedSeatIds.add(seatSnapshot.seatId())) {
                 throw new IllegalArgumentException("Theater returned an invalid seat list");
             }
-            if (!showtimeSeatIds.contains(seatSnapshot.seatId())) {
+            if (!showtime.auditoriumId().equals(seatSnapshot.auditoriumId())
+                    || !showtimeSeatIds.contains(seatSnapshot.seatId())) {
                 throw new IllegalArgumentException("Seat does not belong to showtime auditorium");
             }
             if (seatSnapshot.type() == null) {

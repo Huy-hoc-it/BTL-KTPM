@@ -48,8 +48,8 @@ class BookingServiceTest {
                 List.of()
         ));
         theaterApi.setSeats(List.of(
-                new SeatSnapshot(standardSeatId, "A", 1, SeatKind.STANDARD),
-                new SeatSnapshot(vipSeatId, "A", 2, SeatKind.VIP)
+                new SeatSnapshot(standardSeatId, auditoriumId, "A", 1, SeatKind.STANDARD),
+                new SeatSnapshot(vipSeatId, auditoriumId, "A", 2, SeatKind.VIP)
         ));
         bookingService = new BookingService(
                 bookingRepository,
@@ -137,7 +137,7 @@ class BookingServiceTest {
     @Test
     void rejectsSeatThatDoesNotBelongToShowtime() {
         theaterApi.setSeats(List.of(
-                new SeatSnapshot(UUID.randomUUID(), "A", 1, SeatKind.STANDARD)
+                new SeatSnapshot(UUID.randomUUID(), auditoriumId, "A", 1, SeatKind.STANDARD)
         ));
 
         assertThrows(IllegalArgumentException.class,
@@ -178,5 +178,13 @@ class BookingServiceTest {
 
         assertNotNull(newBooking.getBookingId());
         assertEquals(1, bookingRepository.getBookingCount());
+    }
+
+    @Test
+    void rejectsSeatFromAnotherAuditoriumEvenWhenItAppearsInShowtimeSeatList() {
+        theaterApi.setSeats(List.of(new SeatSnapshot(standardSeatId, UUID.randomUUID(), "A", 1, SeatKind.STANDARD)));
+        assertThrows(IllegalArgumentException.class,
+                () -> bookingService.createBooking(userId, showtimeId, List.of(standardSeatId)));
+        assertEquals(0, bookingRepository.getBookingCount());
     }
 }
