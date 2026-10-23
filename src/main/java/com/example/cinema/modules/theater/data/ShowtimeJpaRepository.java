@@ -30,7 +30,7 @@ public interface ShowtimeJpaRepository extends JpaRepository<ShowtimeEntity, UUI
             Collection<ShowtimeStatus> statuses
     );
 
-    List<ShowtimeEntity> findAllByMovieIdAndStartsAtBetweenOrderByStartsAtAsc(
+    List<ShowtimeEntity> findAllByMovieIdAndStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(
             UUID movieId,
             Instant from,
             Instant to

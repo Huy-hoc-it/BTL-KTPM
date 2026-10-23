@@ -13,6 +13,7 @@ public interface ShowtimeRepository {
 
     Optional<Showtime> findByIdForUpdate(UUID showtimeId);
 
+    /** Queries startsAt in the half-open interval [from, to), sorted ascending. */
     List<Showtime> findByMovieIdAndStartsAtBetween(UUID movieId, Instant from, Instant to);
 
     boolean existsOverlapping(UUID auditoriumId, Instant startsAt, Instant endsAt);

@@ -46,7 +46,7 @@ class ShowtimeRepositoryAdapter implements ShowtimeRepository {
 
     @Override
     public List<Showtime> findByMovieIdAndStartsAtBetween(UUID movieId, Instant from, Instant to) {
-        return showtimeRepository.findAllByMovieIdAndStartsAtBetweenOrderByStartsAtAsc(movieId, from, to).stream()
+        return showtimeRepository.findAllByMovieIdAndStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(movieId, from, to).stream()
                 .map(TheaterDataMapper::toBusiness)
                 .toList();
     }
