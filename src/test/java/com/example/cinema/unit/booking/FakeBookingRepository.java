@@ -61,6 +61,11 @@ class FakeBookingRepository implements BookingRepository {
         }
     }
 
+    @Override
+    public boolean existsConfirmedByShowtimeId(UUID showtimeId) {
+        return bookingsById.values().stream().anyMatch(booking -> booking.getShowtimeId().equals(showtimeId));
+    }
+
     int getBookingCount() {
         return bookingsById.size();
     }

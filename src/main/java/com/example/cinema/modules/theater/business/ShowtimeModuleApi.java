@@ -19,6 +19,13 @@ public interface ShowtimeModuleApi {
     ShowtimeSnapshot getShowtimeSnapshot(UUID showtimeId);
 
     /**
+     * Locks the showtime until the caller's transaction completes, then returns
+     * its current snapshot. Booking must call this inside its write transaction
+     * before validating or saving, so cancellation cannot race with a booking.
+     */
+    ShowtimeSnapshot lockShowtimeForBooking(UUID showtimeId);
+
+    /**
      * Returns the existing seats whose IDs were requested by Booking.
      * The returned list may be shorter than {@code seatIds} when an ID is unknown.
      */

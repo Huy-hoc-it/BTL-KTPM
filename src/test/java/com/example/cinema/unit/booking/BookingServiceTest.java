@@ -187,4 +187,15 @@ class BookingServiceTest {
                 () -> bookingService.createBooking(userId, showtimeId, List.of(standardSeatId)));
         assertEquals(0, bookingRepository.getBookingCount());
     }
+
+    @Test
+    void bookingGuardRejectsConfirmedBookingsAndAllowsShowtimesWithoutBookings() {
+        var guard = new com.example.cinema.modules.booking.business.BookingShowtimeCancellationGuard(bookingRepository);
+        assertDoesNotThrow(() -> guard.checkCancellationAllowed(showtimeId));
+        Booking booking = bookingService.createBooking(userId, showtimeId, List.of(standardSeatId));
+        assertThrows(com.example.cinema.modules.theater.business.ShowtimeHasBookingsException.class,
+                () -> guard.checkCancellationAllowed(showtimeId));
+        bookingService.deleteBooking(booking);
+        assertDoesNotThrow(() -> guard.checkCancellationAllowed(showtimeId));
+    }
 }

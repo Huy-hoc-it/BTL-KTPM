@@ -11,6 +11,8 @@ public interface ShowtimeRepository {
 
     Optional<Showtime> findById(UUID showtimeId);
 
+    Optional<Showtime> findByIdForUpdate(UUID showtimeId);
+
     List<Showtime> findByMovieIdAndStartsAtBetween(UUID movieId, Instant from, Instant to);
 
     boolean existsOverlapping(UUID auditoriumId, Instant startsAt, Instant endsAt);

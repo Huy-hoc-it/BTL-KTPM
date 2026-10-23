@@ -50,7 +50,7 @@ public class BookingService {
     public Booking createBooking(UUID userId, UUID showtimeId, List<UUID> seatIds) {
         validateBookingRequest(userId, showtimeId, seatIds);
 
-        ShowtimeSnapshot showtime = showtimeModuleApi.getShowtimeSnapshot(showtimeId);
+        ShowtimeSnapshot showtime = showtimeModuleApi.lockShowtimeForBooking(showtimeId);
         List<SeatSnapshot> seatSnapshots = showtimeModuleApi.getSeatSnapshots(seatIds);
 
         validateShowtime(showtime, showtimeId);

@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 public class ShowtimeService implements ShowtimeModuleApi {
 
@@ -21,6 +22,7 @@ public class ShowtimeService implements ShowtimeModuleApi {
     private final SeatRepository seatRepository;
     private final MovieModuleApi movieModuleApi;
     private final Clock clock;
+    private final List<ShowtimeCancellationGuard> cancellationGuards;
 
     public ShowtimeService(
             ShowtimeRepository showtimeRepository,
@@ -29,11 +31,23 @@ public class ShowtimeService implements ShowtimeModuleApi {
             MovieModuleApi movieModuleApi,
             Clock clock
     ) {
+        this(showtimeRepository, auditoriumRepository, seatRepository, movieModuleApi, clock, List.of());
+    }
+
+    public ShowtimeService(
+            ShowtimeRepository showtimeRepository,
+            AuditoriumRepository auditoriumRepository,
+            SeatRepository seatRepository,
+            MovieModuleApi movieModuleApi,
+            Clock clock,
+            List<ShowtimeCancellationGuard> cancellationGuards
+    ) {
         this.showtimeRepository = showtimeRepository;
         this.auditoriumRepository = auditoriumRepository;
         this.seatRepository = seatRepository;
         this.movieModuleApi = movieModuleApi;
         this.clock = clock;
+        this.cancellationGuards = List.copyOf(cancellationGuards);
     }
 
     @Transactional
@@ -41,7 +55,7 @@ public class ShowtimeService implements ShowtimeModuleApi {
         MovieModuleApi.MovieSnapshot movie = movieModuleApi
                 .findMovieForScheduling(command.movieId())
                 .orElseThrow(() -> new MovieNotFoundException(command.movieId()));
-        Auditorium auditorium = auditoriumRepository.findById(command.auditoriumId())
+        Auditorium auditorium = auditoriumRepository.findByIdForUpdate(command.auditoriumId())
                 .orElseThrow(() -> new AuditoriumNotFoundException(command.auditoriumId()));
         if (!auditorium.isActive()) {
             throw new TheaterBusinessException("Auditorium is not active: " + auditorium.id());
@@ -83,11 +97,13 @@ public class ShowtimeService implements ShowtimeModuleApi {
 
     @Transactional
     public void cancel(UUID showtimeId) {
-        Showtime showtime = findById(showtimeId);
+        Showtime showtime = showtimeRepository.findByIdForUpdate(showtimeId)
+                .orElseThrow(() -> new ShowtimeNotFoundException(showtimeId));
         Instant now = clock.instant();
         if (showtime.status() != ShowtimeStatus.SCHEDULED || !showtime.startsAt().isAfter(now)) {
             throw new TheaterBusinessException("Showtime cannot be cancelled: " + showtimeId);
         }
+        cancellationGuards.forEach(guard -> guard.checkCancellationAllowed(showtimeId));
         showtimeRepository.save(new Showtime(
                 showtime.id(),
                 showtime.movieId(),
@@ -107,6 +123,12 @@ public class ShowtimeService implements ShowtimeModuleApi {
             return null;
         }
         return showtimeRepository.findById(showtimeId).map(this::toSnapshot).orElse(null);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public ShowtimeSnapshot lockShowtimeForBooking(UUID showtimeId) {
+        return showtimeRepository.findByIdForUpdate(showtimeId).map(this::toSnapshot).orElse(null);
     }
 
     @Override

@@ -2,12 +2,14 @@ package com.example.cinema.modules.theater.data;
 
 import com.example.cinema.modules.theater.business.Auditorium;
 import com.example.cinema.modules.theater.business.AuditoriumRepository;
+import com.example.cinema.modules.theater.business.AuditoriumNameAlreadyExistsException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Repository
 @ConditionalOnProperty(name = "cinema.theater.enabled", havingValue = "true", matchIfMissing = true)
@@ -26,12 +28,25 @@ class AuditoriumRepositoryAdapter implements AuditoriumRepository {
 
     @Override
     public Auditorium save(Auditorium auditorium) {
-        return TheaterDataMapper.toBusiness(auditoriumRepository.save(TheaterDataMapper.toEntity(auditorium)));
+        try {
+            return TheaterDataMapper.toBusiness(auditoriumRepository.saveAndFlush(TheaterDataMapper.toEntity(auditorium)));
+        } catch (DataIntegrityViolationException exception) {
+            if (TheaterConstraintViolation.isConstraint(exception, "uq_auditorium_name")
+                    || TheaterConstraintViolation.isConstraint(exception, "uq_auditorium_name_lower")) {
+                throw new AuditoriumNameAlreadyExistsException(auditorium.name());
+            }
+            throw exception;
+        }
     }
 
     @Override
     public Optional<Auditorium> findById(UUID auditoriumId) {
         return auditoriumRepository.findById(auditoriumId).map(TheaterDataMapper::toBusiness);
+    }
+
+    @Override
+    public Optional<Auditorium> findByIdForUpdate(UUID auditoriumId) {
+        return auditoriumRepository.findByIdForUpdate(auditoriumId).map(TheaterDataMapper::toBusiness);
     }
 
     @Override
