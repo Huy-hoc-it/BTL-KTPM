@@ -155,6 +155,19 @@ class TheaterHttpTest {
     }
 
     @Test
+    void guestCanReadSeatAvailabilityAndUnknownShowtimesReturn404() throws Exception {
+        Showtime showtime = showtime(ShowtimeStatus.SCHEDULED);
+        when(showtimes.findById(showtime.id())).thenReturn(Optional.of(showtime));
+        when(bookings.findBookedSeatIds(showtime.id())).thenReturn(List.of(SEAT));
+        mvc.perform(get("/api/v1/showtimes/{id}/seats", showtime.id()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].status").value("BOOKED"));
+        mvc.perform(get("/api/v1/showtimes/{id}/seats", UUID.randomUUID()))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.error.code").value("SHOWTIME_NOT_FOUND"));
+        mvc.perform(get("/api/v1/showtimes/{id}", UUID.randomUUID()))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.error.code").value("SHOWTIME_NOT_FOUND"));
+    }
+
+    @Test
     void adminRoutesRequireAuthenticationAndAdminRole() throws Exception {
         for (String resource : List.of("auditoriums", "showtimes")) {
             String route = "/api/v1/admin/" + resource;
@@ -182,7 +195,7 @@ class TheaterHttpTest {
     }
 
     @Test
-    void openApiIncludesRoomShowtimeAndCancellationRoutes() throws Exception {
+    void openApiIncludesRoomShowtimeCancellationAndSeatRoutes() throws Exception {
         mvc.perform(get("/v3/api-docs")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/v1/admin/auditoriums'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/admin/auditoriums'].post").exists())
@@ -190,7 +203,8 @@ class TheaterHttpTest {
                 .andExpect(jsonPath("$.paths['/api/v1/admin/showtimes'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/admin/showtimes/{id}'].delete").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/showtimes'].get").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/showtimes/{id}'].get").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/showtimes/{id}'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/showtimes/{id}/seats'].get").exists());
     }
 
     private Showtime showtime(ShowtimeStatus state) {

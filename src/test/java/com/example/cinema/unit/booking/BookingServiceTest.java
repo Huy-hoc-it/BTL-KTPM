@@ -198,4 +198,16 @@ class BookingServiceTest {
         bookingService.deleteBooking(booking);
         assertDoesNotThrow(() -> guard.checkCancellationAllowed(showtimeId));
     }
+
+    @Test
+    void seatAvailabilityCombinesTheaterLayoutWithBookedSeats() {
+        bookingService.createBooking(userId, showtimeId, List.of(standardSeatId));
+        var seats = bookingService.getSeatAvailability(showtimeId);
+        assertEquals(2, seats.size());
+        assertEquals(standardSeatId, seats.get(0).seat().seatId());
+        assertEquals(true, seats.get(0).booked());
+        assertEquals(false, seats.get(1).booked());
+        assertThrows(com.example.cinema.modules.theater.business.ShowtimeNotFoundException.class,
+                () -> bookingService.getSeatAvailability(UUID.randomUUID()));
+    }
 }

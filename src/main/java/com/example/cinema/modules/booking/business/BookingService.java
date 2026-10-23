@@ -1,6 +1,7 @@
 package com.example.cinema.modules.booking.business;
 
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi;
+import com.example.cinema.modules.theater.business.ShowtimeNotFoundException;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatKind;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatSnapshot;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeSnapshot;
@@ -90,6 +91,16 @@ public class BookingService {
         }
         return bookingRepository.findByIdAndUserId(bookingId, userId)
                 .orElseThrow(() -> new BookingNotFoundException(bookingId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatAvailability> getSeatAvailability(UUID showtimeId) {
+        ShowtimeSnapshot showtime = showtimeModuleApi.findShowtime(showtimeId)
+                .orElseThrow(() -> new ShowtimeNotFoundException(showtimeId));
+        var bookedSeats = new HashSet<>(bookingRepository.findBookedSeatIds(showtimeId));
+        return showtime.seats().stream()
+                .map(seat -> new SeatAvailability(seat, bookedSeats.contains(seat.seatId())))
+                .toList();
     }
 
     private BigDecimal getTotalAmount(List<bookingSeat> seats) {

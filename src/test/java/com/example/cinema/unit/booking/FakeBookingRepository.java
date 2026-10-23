@@ -66,6 +66,12 @@ class FakeBookingRepository implements BookingRepository {
         return bookingsById.values().stream().anyMatch(booking -> booking.getShowtimeId().equals(showtimeId));
     }
 
+    @Override
+    public java.util.List<UUID> findBookedSeatIds(UUID showtimeId) {
+        return activeBookingBySeat.keySet().stream().filter(key -> key.showtimeId.equals(showtimeId))
+                .map(key -> key.seatId).toList();
+    }
+
     int getBookingCount() {
         return bookingsById.size();
     }
