@@ -1,26 +1,14 @@
 # Cinema Backend
 
-Backend quản lý rạp phim. Hiện đã có đăng ký, đăng nhập, JWT Bearer và API xem hồ sơ người dùng; các API phim, suất chiếu và đặt vé đang được triển khai theo kế hoạch trong `docs/work_plan.md`.
+Backend quản lý rạp phim. Hiện đã có đăng ký, đăng nhập, JWT Bearer và API xem hồ sơ; Theater quản lý phòng, sơ đồ ghế và suất chiếu; Booking hỗ trợ tạo/xem booking và truy vấn trạng thái ghế. Phạm vi nghiệp vụ và kế hoạch được mô tả trong `docs/SPEC.md` và `docs/work_plan.md`.
 
 ## Kiến trúc
 
 Ứng dụng dùng kiến trúc modular monolith. Mỗi module nghiệp vụ được chia thành ba tầng `api -> business -> data`: API nhận/trả JSON, business xử lý quy tắc nghiệp vụ và định nghĩa repository, data triển khai truy cập PostgreSQL bằng JPA. Các module chạy trong một Spring Boot application.
 
-### Contract tạm thời: Booking gọi Theater
+### Contract Theater và Booking
 
-Đây là chữ ký tạm thời để Mạnh có thể viết business logic và unit test trước khi module Theater hoàn tất. Thái và Mạnh phải chốt hoặc thay thế contract này trước khi tích hợp.
-
-```java
-package com.example.cinema.modules.theater.business;
-
-public interface ShowtimeModuleApi {
-    ShowtimeSnapshot getShowtimeSnapshot(UUID showtimeId);
-
-    List<SeatSnapshot> getSeatSnapshots(List<UUID> seatIds);
-}
-```
-
-`ShowtimeSnapshot` chỉ chứa `showtimeId`, `auditoriumId`, `startsAt`, `status` và `basePrice`. `SeatSnapshot` chứa `seatId`, `auditoriumId` và `type`. Booking gọi hai method riêng, rồi đối chiếu phòng của suất với phòng của từng ghế; không truy cập controller, repository, JPA entity hoặc bảng dữ liệu của Theater.
+Theater cung cấp snapshot suất và ghế qua public business API; Booking kiểm tra phòng của ghế, tổng hợp trạng thái ghế và triển khai guard ngăn hủy suất đã có booking. Cả đặt vé và hủy suất khóa cùng hàng suất trong transaction. Xem [contract tích hợp](docs/theater_booking_contract.md).
 
 ## Yêu cầu
 
@@ -34,6 +22,8 @@ public interface ShowtimeModuleApi {
 ```
 
 `verify` chạy kiểm thử kiến trúc, kiểm thử HTTP cho health/security/error/OpenAPI và kiểm thử PostgreSQL thật bằng Testcontainers. Docker cần hoạt động cho kiểm thử PostgreSQL.
+
+Bản code tích hợp Theater–Booking đã qua **117 test, không lỗi, không bỏ qua**, gồm các tình huống đồng thời trên PostgreSQL (xác minh ngày 25/10/2026). Báo cáo nằm trong `target/surefire-reports` của thư mục chạy Maven.
 
 ## Chạy local bằng Maven
 
@@ -75,7 +65,7 @@ Trong `.env.example`, tài khoản Admin demo mặc định là `admin` / `demo-
 2. Sao chép `data.accessToken` trong response, bấm **Authorize** và dán riêng token (không thêm tiền tố `Bearer`).
 3. Gọi `GET /api/v1/users/me`; response cần có `data.role: "ADMIN"`.
 
-Nếu đã đổi `DEMO_ADMIN_USERNAME` hoặc `DEMO_ADMIN_PASSWORD` trong `.env`, hãy dùng giá trị đó. Để tắt tài khoản demo, đặt cả hai biến thành rỗng. Tài khoản này chỉ dành cho local; API quản trị nghiệp vụ sẽ được thêm cùng các module tương ứng.
+Nếu đã đổi `DEMO_ADMIN_USERNAME` hoặc `DEMO_ADMIN_PASSWORD` trong `.env`, hãy dùng giá trị đó. Để tắt tài khoản demo, đặt cả hai biến thành rỗng. Tài khoản này chỉ dành cho local; có thể dùng để thử các API quản trị phòng và suất chiếu trong Swagger.
 
 Dừng các container nhưng giữ dữ liệu PostgreSQL:
 
@@ -87,3 +77,5 @@ docker compose down
 
 - [Đặc tả hệ thống](docs/SPEC.md)
 - [Kế hoạch phân công](docs/work_plan.md)
+- [Contract tích hợp Theater–Booking](docs/theater_booking_contract.md)
+- [Yêu cầu và tiến độ Booking](docs/booking_requirements.md)

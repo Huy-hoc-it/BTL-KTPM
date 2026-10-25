@@ -4,7 +4,7 @@
 
 Module Booking chịu trách nhiệm biến yêu cầu chọn ghế của khách thành một booking hợp lệ. Booking sở hữu người đặt, suất được đặt, các ghế đã chọn, giá chốt của từng ghế và tổng tiền.
 
-Trong bước hiện tại, cần hoàn thiện business logic đặt ghế và unit test với fake Theater. API HTTP, JPA/PostgreSQL thật, migration, xem booking, hủy booking và chống double-booking ở database được hoàn thiện sau.
+Tài liệu giữ các yêu cầu nghiệp vụ của Booking và cập nhật contract đã tích hợp với Theater. Hiện đã có business logic, unit test với fake Theater, API tạo/xem booking, JPA/PostgreSQL, migration và ràng buộc duy nhất chống trùng ghế. Các yêu cầu còn lại được đối chiếu ở mục 9.
 
 ## 2. Ranh giới với Theater
 
@@ -12,21 +12,18 @@ Theater sở hữu phòng chiếu, ghế vật lý, loại ghế, suất chiếu
 
 Booking chỉ gọi public business contract của Theater là `ShowtimeModuleApi`.
 
-### 2.1. `ShowtimeModuleApi.getShowtimeSnapshot` và `getSeatSnapshots`
+### 2.1. Contract đã tích hợp
 
-**Mục đích:** tách dữ liệu suất chiếu và dữ liệu ghế thành hai truy vấn độc lập để Booking tự đối chiếu chúng.
+Nguồn chuẩn: [theater_booking_contract.md](theater_booking_contract.md). Các record `ShowtimeSnapshot` và `SeatSnapshot` nằm trong `ShowtimeModuleApi`.
 
-**Đầu vào:**
+- Showtime snapshot có `showtimeId`, `auditoriumId`, `startsAt`, `basePrice`, `status`, `seats`.
+- Seat snapshot có `seatId`, `auditoriumId`, `rowLabel`, `seatNumber`, `type`.
+- Tạo booking gọi `lockShowtimeForBooking` trong transaction để giữ khóa hàng suất đến commit. Hai truy vấn chỉ đọc là `getShowtimeSnapshot`/`findShowtime`.
+- `getSeatSnapshots` trả ghế tồn tại trong tập yêu cầu; Booking từ chối nếu thiếu/thừa/trùng ID hoặc sai phòng.
+- Booking triển khai port Theater `ShowtimeCancellationGuard` và endpoint công khai `GET /api/v1/showtimes/{id}/seats`.
+- Trạng thái xác nhận hiện suy ra từ booking còn tồn tại, độc lập với `payment_status`. Khi triển khai hủy mềm, repository Booking phải lọc `CONFIRMED` và ghế chưa giải phóng như SPEC.
 
-- `getShowtimeSnapshot` nhận `showtimeId`.
-- `getSeatSnapshots` nhận danh sách `seatIds` đã qua kiểm tra sơ bộ ở Booking.
-
-**Đầu ra:**
-
-- Showtime snapshot: ID suất, ID phòng, thời điểm bắt đầu, trạng thái và giá cơ bản.
-- Danh sách Seat snapshot: ID ghế, ID phòng của ghế và loại ghế `STANDARD` hoặc `VIP`.
-
-**Quy tắc:** Theater phải trả đúng dữ liệu tại thời điểm gọi. Nếu không tìm thấy suất, implementation Theater phải báo lỗi không tìm thấy hoặc trả kết quả mà Booking nhận diện được là không có suất. Snapshot không được là entity JPA.
+Trình tự tạo booking ở mục 6.1 đã được cập nhật theo implementation hiện tại.
 
 ## 3. `Booking`
 
@@ -39,7 +36,7 @@ Booking chỉ gọi public business contract của Theater là `ShowtimeModuleAp
 - `showtimeId`: suất được đặt.
 - Danh sách `BookingSeat`.
 - `totalAmount`: tổng tiền chốt tại lúc tạo booking.
-- Khi hoàn thiện persistence: trạng thái booking, mã booking, thời gian tạo và thời gian hủy.
+- Theo SPEC cần bổ sung trạng thái booking, mã booking và thời gian hủy; persistence hiện đã có thời gian tạo và `payment_status`.
 
 **Quy tắc:**
 
@@ -61,7 +58,7 @@ Booking chỉ gọi public business contract của Theater là `ShowtimeModuleAp
 - Giá phải dùng `BigDecimal`.
 - Giá có scale 2 và làm tròn `HALF_UP`.
 - Không lưu loại ghế hoặc giá gốc nếu chúng không cần cho lịch sử giao dịch; giá chốt là bắt buộc.
-- Khi triển khai database, `BookingSeat` sẽ có thêm `bookingId`, `showtimeId` và `releasedAt`.
+- Persistence hiện lưu `bookingId`, `showtimeId` và ID ghế. `releasedAt` thuộc yêu cầu hủy mềm, chưa được triển khai.
 
 ## 5. `BookingRepository`
 
@@ -77,8 +74,8 @@ Booking chỉ gọi public business contract của Theater là `ShowtimeModuleAp
 
 - Business service chỉ gọi interface này.
 - Unit test dùng fake repository; fake có thể giữ booking trong biến hoặc map trong phạm vi test.
-- Tuần sau tầng `booking/data` triển khai interface bằng JPA/PostgreSQL.
-- Khi unique index báo trùng ghế, implementation data phải chuyển lỗi đó thành lỗi nghiệp vụ `SEAT_ALREADY_BOOKED`.
+- Tầng `booking/data` hiện triển khai interface bằng JPA/PostgreSQL.
+- Yêu cầu còn lại: chuyển vi phạm ràng buộc duy nhất ghế thành lỗi `409 SEAT_ALREADY_BOOKED` theo SPEC.
 
 ## 6. `BookingService`
 
@@ -94,16 +91,16 @@ Booking chỉ gọi public business contract của Theater là `ShowtimeModuleAp
 
 **Đầu vào:**
 
-- `userId`: lấy từ security context khi có API; trong unit test truyền trực tiếp.
+- `userId`: theo SPEC phải lấy từ security context; controller hiện vẫn nhận từ request. Unit test truyền trực tiếp.
 - `showtimeId`: do khách chọn.
 - `seatIds`: do khách chọn.
 
 **Trình tự bắt buộc:**
 
 1. Gọi `validateBookingRequest`.
-2. Gọi `getShowtimeSnapshot` một lần cho suất và `getSeatSnapshots` một lần cho danh sách ghế.
+2. Gọi `lockShowtimeForBooking` một lần cho suất và `getSeatSnapshots` một lần cho danh sách ghế trong cùng transaction.
 3. Gọi `validateShowtime`.
-4. Đối chiếu ID phòng của từng Seat snapshot với ID phòng của Showtime snapshot; tạo BookingSeat cho từng ghế hợp lệ.
+4. Kiểm tra tập ID ghế, phòng và sơ đồ của suất; kiểm tra ghế chưa được đặt trong repository Booking, rồi tạo BookingSeat cho từng ghế hợp lệ.
 5. Cộng giá từng ghế để tính `totalAmount`.
 6. Tạo đối tượng Booking với user, suất, các BookingSeat và tổng tiền.
 7. Gọi `BookingRepository.save` đúng một lần.
@@ -129,7 +126,7 @@ Booking chỉ gọi public business contract của Theater là `ShowtimeModuleAp
 - Không có phần tử null.
 - Không có seat ID trùng trong cùng request.
 
-**Kết quả khi sai:** ném business exception phù hợp. Trong bản tạm thời có thể dùng exception validation đơn giản; khi có API phải được map về lỗi validation HTTP.
+**Kết quả khi sai:** không lưu booking. Implementation hiện ném `IllegalArgumentException`, được `BookingExceptionHandler` ánh xạ về HTTP 400; chuẩn hóa lỗi validation theo SPEC là phần còn cần hoàn thiện.
 
 ### 6.3. `validateShowtime(showtimeSnapshot, requestedShowtimeId)`
 
@@ -146,14 +143,14 @@ Booking chỉ gọi public business contract của Theater là `ShowtimeModuleAp
 
 **Kết quả khi sai:** không tiếp tục tạo Booking và không gọi repository save.
 
-### 6.4. `validateSeats(seatSnapshots, requestedSeatIds, auditoriumId)`
+### 6.4. `validateSeats(showtime, seatSnapshots, requestedSeatIds)`
 
 **Mục đích:** kiểm tra danh sách ghế Theater trả về khớp request và tất cả ghế thuộc phòng của suất.
 
 **Phải kiểm tra:**
 
 - Danh sách trả về có đủ các ID ghế được yêu cầu, không thừa, không thiếu, không trùng.
-- ID phòng của ghế bằng ID phòng của suất.
+- ID phòng của ghế bằng ID phòng của suất; ID ghế phải có trong sơ đồ `ShowtimeSnapshot.seats`.
 - Loại ghế tồn tại và thuộc một trong hai loại hỗ trợ: `STANDARD` hoặc `VIP`.
 
 **Kết quả:** chỉ sau khi danh sách ghế hợp lệ mới tạo BookingSeat và tính giá cho từng ghế.
@@ -181,9 +178,11 @@ Booking chỉ gọi public business contract của Theater là `ShowtimeModuleAp
 
 ## 7. Transaction và cạnh tranh ghế
 
-`createBooking` sẽ được đánh dấu transaction khi persistence hoàn chỉnh. Transaction giúp việc lưu Booking và toàn bộ BookingSeat thành công hoặc thất bại cùng nhau.
+`createBooking` đã được đánh dấu `@Transactional`: lưu Booking và toàn bộ BookingSeat thành công hoặc thất bại cùng nhau. Booking gọi `lockShowtimeForBooking` để giữ khóa hàng suất đến hết transaction; hủy suất dùng cùng khóa để không thể vừa hủy vừa đặt vé thành công.
 
-Transaction một mình không đủ để chống hai request cùng đặt một ghế. Tuần sau database phải có partial unique index cho cặp `showtime_id` và `seat_id` khi ghế chưa được giải phóng. Nếu index từ chối insert, Booking phải trả lỗi nghiệp vụ `SEAT_ALREADY_BOOKED`.
+Migration V6 hiện có unique constraint `uq_booking_seat_per_showtime` trên `(showtime_id, seat_id)`. Booking còn lưu thì ghế vẫn được giữ; luồng `deleteBooking` hiện xóa vật lý booking cùng các ghế. Chưa có `released_at` hoặc partial unique index cho hủy mềm.
+
+Theo SPEC, khi triển khai hủy mềm phải bổ sung `released_at`, partial unique index cho ghế chưa giải phóng và chuyển lỗi trùng ghế thành `409 SEAT_ALREADY_BOOKED`.
 
 ## 8. Unit test bắt buộc
 
@@ -207,12 +206,20 @@ Phải có các test:
 - Khi validation thất bại, repository không được gọi save.
 - Khi hợp lệ, repository được gọi save đúng một lần.
 
-## 9. Chưa thuộc phạm vi hiện tại
+## 9. Đối chiếu triển khai và phần còn lại
 
-- Controller và endpoint HTTP POST booking.
-- Lấy `userId` thật từ Spring Security.
-- JPA entity, database schema và Flyway migration.
-- Repository PostgreSQL thật.
-- Xem booking, phân quyền owner/admin, hủy booking.
-- Ghế đã đặt/chưa đặt và partial unique index.
-- Integration test PostgreSQL và test hai request cạnh tranh cùng ghế.
+### Đã có
+
+- Business logic đặt 1–8 ghế, đối chiếu phòng và tính giá bằng snapshot Theater.
+- Controller tạo/xem booking, JPA entity, repository PostgreSQL và Flyway migration.
+- Unique constraint ghế theo suất; transaction và khóa suất khi tạo booking.
+- Endpoint Guest xem ghế `AVAILABLE`/`BOOKED` và guard ngăn hủy suất có booking xác nhận.
+- Unit test và integration test Theater–Booking; test đặt vé đồng thời với hủy suất.
+
+### Còn cần hoàn thiện theo SPEC
+
+- Lấy `userId` từ principal đã xác thực và kiểm tra ownership; controller hiện dùng `userId` do client gửi.
+- Hủy mềm booking qua HTTP, trạng thái `CONFIRMED`/`CANCELLED`, thời hạn hủy 30 phút, `released_at` và partial unique index.
+- Mã booking và endpoint Admin xem mọi booking theo SPEC.
+- Chuẩn hóa response/error mapping của Booking, gồm `409 SEAT_ALREADY_BOOKED` và lỗi validation.
+- Integration test riêng cho hai khách đồng thời đặt cùng một ghế; test đặt vé–hủy suất hiện có không thay thế tình huống này.
