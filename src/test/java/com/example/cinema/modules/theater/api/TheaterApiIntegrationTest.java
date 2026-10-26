@@ -110,7 +110,7 @@ class TheaterApiIntegrationTest {
         mockMvc.perform(get("/api/v1/admin/auditoriums")
                         .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(auditoriumId.toString()));
+                .andExpect(jsonPath("$[*].id").value(org.hamcrest.Matchers.hasItem(auditoriumId.toString())));
 
         Instant startsAt = Instant.now().plus(Duration.ofHours(2)).truncatedTo(ChronoUnit.SECONDS);
         MvcResult showtimeResult = mockMvc.perform(post("/api/v1/admin/showtimes")
@@ -137,7 +137,7 @@ class TheaterApiIntegrationTest {
                         .queryParam("movieId", MOVIE_ID.toString())
                         .queryParam("date", showDate.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(showtimeId.toString()));
+                .andExpect(jsonPath("$[*].id").value(org.hamcrest.Matchers.hasItem(showtimeId.toString())));
 
         mockMvc.perform(get("/api/v1/showtimes/{id}", showtimeId))
                 .andExpect(status().isOk())

@@ -69,6 +69,18 @@ class BookingRepositoryAdapter implements BookingRepository {
         bookingJpaRepository.deleteById(bookingId);
     }
 
+    @Override
+    public boolean existsConfirmedByShowtimeId(UUID showtimeId) {
+        // Every saved booking is confirmed immediately in current persistence.
+        // payment_status is independent of confirmation and does not release seats.
+        return bookingJpaRepository.existsByShowtimeId(showtimeId);
+    }
+
+    @Override
+    public List<UUID> findBookedSeatIds(UUID showtimeId) {
+        return bookingSeatJpaRepository.findBookedSeatIds(showtimeId);
+    }
+
     private Booking toBooking(BookingEntity entity) {
         List<bookingSeat> seats = bookingSeatJpaRepository.findAllByBookingId(entity.getId()).stream()
                 .map(seat -> new bookingSeat(seat.getSeatId(), seat.getPrice()))

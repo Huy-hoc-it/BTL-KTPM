@@ -11,6 +11,8 @@ public interface AuditoriumRepository {
 
     Optional<Auditorium> findById(UUID auditoriumId);
 
+    Optional<Auditorium> findByIdForUpdate(UUID auditoriumId);
+
     List<Auditorium> findActive();
 
     boolean existsByName(String name);

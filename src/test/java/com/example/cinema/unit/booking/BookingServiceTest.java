@@ -48,8 +48,8 @@ class BookingServiceTest {
                 List.of()
         ));
         theaterApi.setSeats(List.of(
-                new SeatSnapshot(standardSeatId, "A", 1, SeatKind.STANDARD),
-                new SeatSnapshot(vipSeatId, "A", 2, SeatKind.VIP)
+                new SeatSnapshot(standardSeatId, auditoriumId, "A", 1, SeatKind.STANDARD),
+                new SeatSnapshot(vipSeatId, auditoriumId, "A", 2, SeatKind.VIP)
         ));
         bookingService = new BookingService(
                 bookingRepository,
@@ -137,7 +137,7 @@ class BookingServiceTest {
     @Test
     void rejectsSeatThatDoesNotBelongToShowtime() {
         theaterApi.setSeats(List.of(
-                new SeatSnapshot(UUID.randomUUID(), "A", 1, SeatKind.STANDARD)
+                new SeatSnapshot(UUID.randomUUID(), auditoriumId, "A", 1, SeatKind.STANDARD)
         ));
 
         assertThrows(IllegalArgumentException.class,
@@ -178,5 +178,36 @@ class BookingServiceTest {
 
         assertNotNull(newBooking.getBookingId());
         assertEquals(1, bookingRepository.getBookingCount());
+    }
+
+    @Test
+    void rejectsSeatFromAnotherAuditoriumEvenWhenItAppearsInShowtimeSeatList() {
+        theaterApi.setSeats(List.of(new SeatSnapshot(standardSeatId, UUID.randomUUID(), "A", 1, SeatKind.STANDARD)));
+        assertThrows(IllegalArgumentException.class,
+                () -> bookingService.createBooking(userId, showtimeId, List.of(standardSeatId)));
+        assertEquals(0, bookingRepository.getBookingCount());
+    }
+
+    @Test
+    void bookingGuardRejectsConfirmedBookingsAndAllowsShowtimesWithoutBookings() {
+        var guard = new com.example.cinema.modules.booking.business.BookingShowtimeCancellationGuard(bookingRepository);
+        assertDoesNotThrow(() -> guard.checkCancellationAllowed(showtimeId));
+        Booking booking = bookingService.createBooking(userId, showtimeId, List.of(standardSeatId));
+        assertThrows(com.example.cinema.modules.theater.business.ShowtimeHasBookingsException.class,
+                () -> guard.checkCancellationAllowed(showtimeId));
+        bookingService.deleteBooking(booking);
+        assertDoesNotThrow(() -> guard.checkCancellationAllowed(showtimeId));
+    }
+
+    @Test
+    void seatAvailabilityCombinesTheaterLayoutWithBookedSeats() {
+        bookingService.createBooking(userId, showtimeId, List.of(standardSeatId));
+        var seats = bookingService.getSeatAvailability(showtimeId);
+        assertEquals(2, seats.size());
+        assertEquals(standardSeatId, seats.get(0).seat().seatId());
+        assertEquals(true, seats.get(0).booked());
+        assertEquals(false, seats.get(1).booked());
+        assertThrows(com.example.cinema.modules.theater.business.ShowtimeNotFoundException.class,
+                () -> bookingService.getSeatAvailability(UUID.randomUUID()));
     }
 }

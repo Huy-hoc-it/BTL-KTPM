@@ -1,6 +1,7 @@
 package com.example.cinema.modules.booking.business;
 
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi;
+import com.example.cinema.modules.theater.business.ShowtimeNotFoundException;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatKind;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatSnapshot;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeSnapshot;
@@ -50,7 +51,7 @@ public class BookingService {
     public Booking createBooking(UUID userId, UUID showtimeId, List<UUID> seatIds) {
         validateBookingRequest(userId, showtimeId, seatIds);
 
-        ShowtimeSnapshot showtime = showtimeModuleApi.getShowtimeSnapshot(showtimeId);
+        ShowtimeSnapshot showtime = showtimeModuleApi.lockShowtimeForBooking(showtimeId);
         List<SeatSnapshot> seatSnapshots = showtimeModuleApi.getSeatSnapshots(seatIds);
 
         validateShowtime(showtime, showtimeId);
@@ -90,6 +91,16 @@ public class BookingService {
         }
         return bookingRepository.findByIdAndUserId(bookingId, userId)
                 .orElseThrow(() -> new BookingNotFoundException(bookingId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatAvailability> getSeatAvailability(UUID showtimeId) {
+        ShowtimeSnapshot showtime = showtimeModuleApi.findShowtime(showtimeId)
+                .orElseThrow(() -> new ShowtimeNotFoundException(showtimeId));
+        var bookedSeats = new HashSet<>(bookingRepository.findBookedSeatIds(showtimeId));
+        return showtime.seats().stream()
+                .map(seat -> new SeatAvailability(seat, bookedSeats.contains(seat.seatId())))
+                .toList();
     }
 
     private BigDecimal getTotalAmount(List<bookingSeat> seats) {
@@ -173,7 +184,8 @@ public class BookingService {
                     || !returnedSeatIds.add(seatSnapshot.seatId())) {
                 throw new IllegalArgumentException("Theater returned an invalid seat list");
             }
-            if (!showtimeSeatIds.contains(seatSnapshot.seatId())) {
+            if (!showtime.auditoriumId().equals(seatSnapshot.auditoriumId())
+                    || !showtimeSeatIds.contains(seatSnapshot.seatId())) {
                 throw new IllegalArgumentException("Seat does not belong to showtime auditorium");
             }
             if (seatSnapshot.type() == null) {

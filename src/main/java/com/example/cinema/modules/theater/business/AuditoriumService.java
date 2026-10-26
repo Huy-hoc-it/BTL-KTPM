@@ -80,8 +80,11 @@ public class AuditoriumService {
 
     @Transactional
     public void softDelete(UUID auditoriumId) {
-        Auditorium auditorium = auditoriumRepository.findById(auditoriumId)
+        Auditorium auditorium = auditoriumRepository.findByIdForUpdate(auditoriumId)
                 .orElseThrow(() -> new AuditoriumNotFoundException(auditoriumId));
+        if (!auditorium.isActive()) {
+            return;
+        }
         if (showtimeRepository.existsFutureByAuditoriumId(auditoriumId, clock.instant())) {
             throw new AuditoriumHasFutureShowtimesException(auditoriumId);
         }

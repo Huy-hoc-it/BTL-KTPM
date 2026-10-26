@@ -10,5 +10,7 @@ public interface BookingRepository {
     Optional<Booking> findByIdAndUserId(UUID bookingId, UUID userId);
     List<Booking> findAllByUserId(UUID userId);
     boolean existsByShowtimeIdAndSeatId(UUID showtimeId, UUID seatId);
+    boolean existsConfirmedByShowtimeId(UUID showtimeId);
+    List<UUID> findBookedSeatIds(UUID showtimeId);
     void deleteById(UUID bookingId);
 }

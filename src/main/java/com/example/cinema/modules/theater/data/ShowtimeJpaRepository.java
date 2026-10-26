@@ -6,8 +6,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 
 public interface ShowtimeJpaRepository extends JpaRepository<ShowtimeEntity, UUID> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from ShowtimeEntity s where s.id = :id")
+    Optional<ShowtimeEntity> findByIdForUpdate(UUID id);
 
     boolean existsByAuditoriumIdAndStartsAtLessThanAndEndsAtGreaterThanAndStatusNot(
             UUID auditoriumId,
@@ -22,7 +30,7 @@ public interface ShowtimeJpaRepository extends JpaRepository<ShowtimeEntity, UUI
             Collection<ShowtimeStatus> statuses
     );
 
-    List<ShowtimeEntity> findAllByMovieIdAndStartsAtBetweenOrderByStartsAtAsc(
+    List<ShowtimeEntity> findAllByMovieIdAndStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(
             UUID movieId,
             Instant from,
             Instant to

@@ -61,7 +61,7 @@ class ShowtimeServiceTest {
         auditoriumId = UUID.randomUUID();
         when(movieModuleApi.findMovieForScheduling(movieId))
                 .thenReturn(Optional.of(new MovieModuleApi.MovieSnapshot(movieId, 120)));
-        when(auditoriumRepository.findById(auditoriumId))
+        when(auditoriumRepository.findByIdForUpdate(auditoriumId))
                 .thenReturn(Optional.of(new Auditorium(
                         auditoriumId,
                         "Room 01",

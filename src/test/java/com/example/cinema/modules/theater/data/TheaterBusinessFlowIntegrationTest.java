@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 @Testcontainers
 @SpringBootTest
 @ActiveProfiles("test")
+@org.springframework.transaction.annotation.Transactional
 class TheaterBusinessFlowIntegrationTest {
 
     private static final Instant NOW = Instant.parse("2026-10-12T10:00:00Z");

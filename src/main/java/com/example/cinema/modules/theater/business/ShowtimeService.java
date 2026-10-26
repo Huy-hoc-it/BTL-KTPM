@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 public class ShowtimeService implements ShowtimeModuleApi {
 
@@ -21,6 +22,7 @@ public class ShowtimeService implements ShowtimeModuleApi {
     private final SeatRepository seatRepository;
     private final MovieModuleApi movieModuleApi;
     private final Clock clock;
+    private final List<ShowtimeCancellationGuard> cancellationGuards;
 
     public ShowtimeService(
             ShowtimeRepository showtimeRepository,
@@ -29,11 +31,23 @@ public class ShowtimeService implements ShowtimeModuleApi {
             MovieModuleApi movieModuleApi,
             Clock clock
     ) {
+        this(showtimeRepository, auditoriumRepository, seatRepository, movieModuleApi, clock, List.of());
+    }
+
+    public ShowtimeService(
+            ShowtimeRepository showtimeRepository,
+            AuditoriumRepository auditoriumRepository,
+            SeatRepository seatRepository,
+            MovieModuleApi movieModuleApi,
+            Clock clock,
+            List<ShowtimeCancellationGuard> cancellationGuards
+    ) {
         this.showtimeRepository = showtimeRepository;
         this.auditoriumRepository = auditoriumRepository;
         this.seatRepository = seatRepository;
         this.movieModuleApi = movieModuleApi;
         this.clock = clock;
+        this.cancellationGuards = List.copyOf(cancellationGuards);
     }
 
     @Transactional
@@ -41,7 +55,7 @@ public class ShowtimeService implements ShowtimeModuleApi {
         MovieModuleApi.MovieSnapshot movie = movieModuleApi
                 .findMovieForScheduling(command.movieId())
                 .orElseThrow(() -> new MovieNotFoundException(command.movieId()));
-        Auditorium auditorium = auditoriumRepository.findById(command.auditoriumId())
+        Auditorium auditorium = auditoriumRepository.findByIdForUpdate(command.auditoriumId())
                 .orElseThrow(() -> new AuditoriumNotFoundException(command.auditoriumId()));
         if (!auditorium.isActive()) {
             throw new TheaterBusinessException("Auditorium is not active: " + auditorium.id());
@@ -83,11 +97,13 @@ public class ShowtimeService implements ShowtimeModuleApi {
 
     @Transactional
     public void cancel(UUID showtimeId) {
-        Showtime showtime = findById(showtimeId);
+        Showtime showtime = showtimeRepository.findByIdForUpdate(showtimeId)
+                .orElseThrow(() -> new ShowtimeNotFoundException(showtimeId));
         Instant now = clock.instant();
         if (showtime.status() != ShowtimeStatus.SCHEDULED || !showtime.startsAt().isAfter(now)) {
             throw new TheaterBusinessException("Showtime cannot be cancelled: " + showtimeId);
         }
+        cancellationGuards.forEach(guard -> guard.checkCancellationAllowed(showtimeId));
         showtimeRepository.save(new Showtime(
                 showtime.id(),
                 showtime.movieId(),
@@ -106,25 +122,13 @@ public class ShowtimeService implements ShowtimeModuleApi {
         if (showtimeId == null) {
             return null;
         }
-        return showtimeRepository.findById(showtimeId)
-                .map(showtime -> new ShowtimeSnapshot(
-                        showtime.id(),
-                        showtime.auditoriumId(),
-                        showtime.startsAt(),
-                        showtime.basePrice(),
-                        switch (showtime.status()) {
-                            case SCHEDULED -> ShowtimeState.SCHEDULED;
-                            case CANCELLED -> ShowtimeState.CANCELLED;
-                            case FINISHED -> ShowtimeState.FINISHED;
-                        },
-                        seatRepository.findByAuditoriumId(showtime.auditoriumId()).stream()
-                                .map(seat -> new SeatSnapshot(
-                                        seat.id(),
-                                        seat.rowLabel(),
-                                        seat.seatNumber(),
-                                        seat.type() == SeatType.VIP ? SeatKind.VIP : SeatKind.STANDARD))
-                                .toList()))
-                .orElse(null);
+        return showtimeRepository.findById(showtimeId).map(this::toSnapshot).orElse(null);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public ShowtimeSnapshot lockShowtimeForBooking(UUID showtimeId) {
+        return showtimeRepository.findByIdForUpdate(showtimeId).map(this::toSnapshot).orElse(null);
     }
 
     @Override
@@ -133,23 +137,12 @@ public class ShowtimeService implements ShowtimeModuleApi {
             return List.of();
         }
         return seatRepository.findByIds(seatIds).stream()
-                .map(seat -> new SeatSnapshot(
-                        seat.id(), seat.rowLabel(), seat.seatNumber(),
-                        seat.type() == SeatType.VIP ? SeatKind.VIP : SeatKind.STANDARD))
+                .map(this::toSnapshot)
                 .toList();
     }
 
-    @Override
-    public java.util.Optional<ShowtimeSnapshot> findShowtime(UUID showtimeId) {
-        return showtimeRepository.findById(showtimeId).map(showtime -> {
-            List<SeatSnapshot> seats = seatRepository.findByAuditoriumId(showtime.auditoriumId()).stream()
-                    .map(seat -> new SeatSnapshot(
-                            seat.id(),
-                            seat.rowLabel(),
-                            seat.seatNumber(),
-                            seat.type() == SeatType.VIP ? SeatKind.VIP : SeatKind.STANDARD))
-                    .toList();
-            return new ShowtimeSnapshot(
+    private ShowtimeSnapshot toSnapshot(Showtime showtime) {
+        return new ShowtimeSnapshot(
                     showtime.id(),
                     showtime.auditoriumId(),
                     showtime.startsAt(),
@@ -159,7 +152,12 @@ public class ShowtimeService implements ShowtimeModuleApi {
                         case CANCELLED -> ShowtimeState.CANCELLED;
                         case FINISHED -> ShowtimeState.FINISHED;
                     },
-                    seats);
-        });
+                    seatRepository.findByAuditoriumId(showtime.auditoriumId()).stream()
+                            .map(this::toSnapshot).toList());
+    }
+
+    private SeatSnapshot toSnapshot(Seat seat) {
+        return new SeatSnapshot(seat.id(), seat.auditoriumId(), seat.rowLabel(), seat.seatNumber(),
+                seat.type() == SeatType.VIP ? SeatKind.VIP : SeatKind.STANDARD);
     }
 }
