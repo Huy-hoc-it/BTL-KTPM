@@ -13,7 +13,7 @@ import java.util.List;
 
 public record CreateAuditoriumRequest(
         @NotBlank @Size(max = 100) String name,
-        @NotEmpty List<@Valid SeatLayoutRequest> seatLayout
+        @NotEmpty List<@NotNull @Valid SeatLayoutRequest> seatLayout
 ) {
 
     public CreateAuditoriumCommand toCommand() {

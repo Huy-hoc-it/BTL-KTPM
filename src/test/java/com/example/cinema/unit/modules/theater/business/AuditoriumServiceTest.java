@@ -82,7 +82,7 @@ class AuditoriumServiceTest {
                 null,
                 NOW,
                 NOW);
-        when(auditoriumRepository.findById(auditorium.id())).thenReturn(Optional.of(auditorium));
+        when(auditoriumRepository.findByIdForUpdate(auditorium.id())).thenReturn(Optional.of(auditorium));
         when(showtimeRepository.existsFutureByAuditoriumId(auditorium.id(), NOW)).thenReturn(false);
         when(auditoriumRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -104,5 +104,41 @@ class AuditoriumServiceTest {
                         new CreateAuditoriumCommand.SeatDefinition("A", 1, 3, SeatType.STANDARD),
                         new CreateAuditoriumCommand.SeatDefinition("a", 3, 4, SeatType.VIP)))))
                 .isInstanceOf(DuplicateSeatPositionException.class);
+    }
+
+    @Test
+    void rejectsEmptyLayoutAndInvalidRanges() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new CreateAuditoriumCommand("Room", List.of()))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                new CreateAuditoriumCommand.SeatDefinition(" ", 1, 2, SeatType.STANDARD))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                new CreateAuditoriumCommand.SeatDefinition("A", 0, 2, SeatType.STANDARD))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                new CreateAuditoriumCommand.SeatDefinition("A", 2, 1, SeatType.STANDARD))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void rejectsDuplicateNameBeforeSaving() {
+        when(auditoriumRepository.existsByName("Room")).thenReturn(true);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.create(new CreateAuditoriumCommand(
+                " Room ", List.of(new CreateAuditoriumCommand.SeatDefinition("A", 1, 1, SeatType.STANDARD)))))
+                .isInstanceOf(com.example.cinema.modules.theater.business.AuditoriumNameAlreadyExistsException.class);
+        org.mockito.Mockito.verify(auditoriumRepository, org.mockito.Mockito.never()).save(any());
+        org.mockito.Mockito.verifyNoInteractions(seatRepository);
+    }
+
+    @Test
+    void refusesToDeleteRoomWithFutureScheduledShowtimes() {
+        var id = java.util.UUID.randomUUID();
+        when(auditoriumRepository.findByIdForUpdate(id)).thenReturn(Optional.of(new Auditorium(
+                id, "Room", com.example.cinema.modules.theater.business.AuditoriumStatus.ACTIVE, null, NOW, NOW)));
+        when(showtimeRepository.existsFutureByAuditoriumId(id, NOW)).thenReturn(true);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.softDelete(id))
+                .isInstanceOf(com.example.cinema.modules.theater.business.AuditoriumHasFutureShowtimesException.class);
+        org.mockito.Mockito.verify(auditoriumRepository, org.mockito.Mockito.never()).save(any());
     }
 }

@@ -6,8 +6,10 @@ import com.example.cinema.modules.theater.business.MovieModuleUnavailableExcepti
 import com.example.cinema.modules.theater.business.SeatRepository;
 import com.example.cinema.modules.theater.business.ShowtimeRepository;
 import com.example.cinema.modules.theater.business.ShowtimeService;
+import com.example.cinema.modules.theater.business.ShowtimeCancellationGuard;
 import com.example.cinema.modules.theater.business.AuditoriumRepository;
 import java.time.Clock;
+import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -40,7 +42,8 @@ public class TheaterConfiguration {
             AuditoriumRepository auditoriumRepository,
             SeatRepository seatRepository,
             ObjectProvider<MovieModuleApi> movieModuleApiProvider,
-            Clock theaterClock
+            Clock theaterClock,
+            List<ShowtimeCancellationGuard> cancellationGuards
     ) {
         MovieModuleApi movieModuleApi = movieId -> {
             MovieModuleApi provider = movieModuleApiProvider.getIfAvailable();
@@ -54,6 +57,7 @@ public class TheaterConfiguration {
                 auditoriumRepository,
                 seatRepository,
                 movieModuleApi,
-                theaterClock);
+                theaterClock,
+                cancellationGuards);
     }
 }

@@ -16,17 +16,20 @@ public interface ShowtimeModuleApi {
      * Returns only showtime data required by Booking. Returns {@code null}
      * when the showtime does not exist, matching the Booking module contract.
      */
-    default ShowtimeSnapshot getShowtimeSnapshot(UUID showtimeId) {
-        return null;
-    }
+    ShowtimeSnapshot getShowtimeSnapshot(UUID showtimeId);
+
+    /**
+     * Locks the showtime until the caller's transaction completes, then returns
+     * its current snapshot. Booking must call this inside its write transaction
+     * before validating or saving, so cancellation cannot race with a booking.
+     */
+    ShowtimeSnapshot lockShowtimeForBooking(UUID showtimeId);
 
     /**
      * Returns the existing seats whose IDs were requested by Booking.
      * The returned list may be shorter than {@code seatIds} when an ID is unknown.
      */
-    default List<SeatSnapshot> getSeatSnapshots(List<UUID> seatIds) {
-        return List.of();
-    }
+    List<SeatSnapshot> getSeatSnapshots(List<UUID> seatIds);
 
     /**
      * Finds a showtime snapshot without exposing Theater persistence models.
@@ -34,7 +37,9 @@ public interface ShowtimeModuleApi {
      * @param showtimeId showtime identifier
      * @return an empty result when the showtime does not exist
      */
-    Optional<ShowtimeSnapshot> findShowtime(UUID showtimeId);
+    default Optional<ShowtimeSnapshot> findShowtime(UUID showtimeId) {
+        return Optional.ofNullable(getShowtimeSnapshot(showtimeId));
+    }
 
     /**
      * Immutable showtime data required by booking rules and seat availability.
@@ -65,10 +70,11 @@ public interface ShowtimeModuleApi {
     /**
      * Immutable seat data needed for price calculation and seat responses.
      */
-    record SeatSnapshot(UUID seatId, String rowLabel, int seatNumber, SeatKind type) {
+    record SeatSnapshot(UUID seatId, UUID auditoriumId, String rowLabel, int seatNumber, SeatKind type) {
 
         public SeatSnapshot {
             Objects.requireNonNull(seatId, "seatId must not be null");
+            Objects.requireNonNull(auditoriumId, "auditoriumId must not be null");
             Objects.requireNonNull(rowLabel, "rowLabel must not be null");
             Objects.requireNonNull(type, "type must not be null");
             if (rowLabel.isBlank()) {

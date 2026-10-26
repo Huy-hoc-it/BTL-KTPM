@@ -8,6 +8,8 @@ import com.example.cinema.modules.theater.business.MovieNotFoundException;
 import com.example.cinema.modules.theater.business.ScheduleOverlapException;
 import com.example.cinema.modules.theater.business.ShowtimeNotFoundException;
 import com.example.cinema.modules.theater.business.TheaterBusinessException;
+import com.example.cinema.modules.theater.business.AuditoriumHasFutureShowtimesException;
+import com.example.cinema.modules.theater.business.ShowtimeHasBookingsException;
 import com.example.cinema.shared.api.ErrorResponse;
 import com.example.cinema.shared.api.RequestIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,10 +20,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice(basePackageClasses = AdminTheaterController.class)
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class TheaterExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ErrorResponse> handleMalformedParameter(HttpServletRequest request) {
+        return error(request, HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "Request is malformed");
+    }
 
     @ExceptionHandler(MovieNotFoundException.class)
     ResponseEntity<ErrorResponse> handleMovieNotFound(HttpServletRequest request) {
@@ -56,6 +64,16 @@ public class TheaterExceptionHandler {
     @ExceptionHandler(MovieModuleUnavailableException.class)
     ResponseEntity<ErrorResponse> handleMovieModuleUnavailable(HttpServletRequest request) {
         return error(request, HttpStatus.SERVICE_UNAVAILABLE, "MOVIE_MODULE_UNAVAILABLE", "Movie lookup is unavailable");
+    }
+
+    @ExceptionHandler(AuditoriumHasFutureShowtimesException.class)
+    ResponseEntity<ErrorResponse> handleFutureShowtimes(HttpServletRequest request) {
+        return error(request, HttpStatus.CONFLICT, "AUDITORIUM_HAS_FUTURE_SHOWTIMES", "Auditorium has future showtimes");
+    }
+
+    @ExceptionHandler(ShowtimeHasBookingsException.class)
+    ResponseEntity<ErrorResponse> handleConfirmedBookings(HttpServletRequest request) {
+        return error(request, HttpStatus.CONFLICT, "SHOWTIME_HAS_CONFIRMED_BOOKINGS", "Showtime has confirmed bookings");
     }
 
     @ExceptionHandler(TheaterBusinessException.class)
