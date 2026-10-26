@@ -1,6 +1,6 @@
 # Cinema Backend
 
-Backend quản lý rạp phim. Hiện đã có đăng ký, đăng nhập, JWT Bearer và API xem hồ sơ; Theater quản lý phòng, sơ đồ ghế và suất chiếu; Booking hỗ trợ tạo/xem booking và truy vấn trạng thái ghế. Phạm vi nghiệp vụ và kế hoạch được mô tả trong `docs/SPEC.md` và `docs/work_plan.md`.
+Backend quản lý rạp phim. Hiện đã có đăng ký, đăng nhập, JWT Bearer và API xem hồ sơ; Movie có CRUD/xóa mềm; Theater quản lý phòng, sơ đồ ghế và suất chiếu; Booking hỗ trợ tạo/xem booking và truy vấn trạng thái ghế. Phạm vi nghiệp vụ và kế hoạch được mô tả trong `docs/SPEC.md` và `docs/work_plan.md`.
 
 ## Kiến trúc
 
@@ -65,7 +65,51 @@ Trong `.env.example`, tài khoản Admin demo mặc định là `admin` / `demo-
 2. Sao chép `data.accessToken` trong response, bấm **Authorize** và dán riêng token (không thêm tiền tố `Bearer`).
 3. Gọi `GET /api/v1/users/me`; response cần có `data.role: "ADMIN"`.
 
-Nếu đã đổi `DEMO_ADMIN_USERNAME` hoặc `DEMO_ADMIN_PASSWORD` trong `.env`, hãy dùng giá trị đó. Để tắt tài khoản demo, đặt cả hai biến thành rỗng. Tài khoản này chỉ dành cho local; có thể dùng để thử các API quản trị phòng và suất chiếu trong Swagger.
+Nếu đã đổi `DEMO_ADMIN_USERNAME` hoặc `DEMO_ADMIN_PASSWORD` trong `.env`, hãy dùng giá trị đó. Để tắt tài khoản demo, đặt cả hai biến thành rỗng. Tài khoản này chỉ dành cho local; có thể dùng để thử các API quản trị Movie, phòng và suất chiếu trong Swagger.
+
+## Movie
+
+| Method | Endpoint | Quyền |
+|---|---|---|
+| GET | `/api/v1/movies?page=1&pageSize=20&status=NOW_SHOWING` | Đã đăng nhập |
+| GET | `/api/v1/movies/{movieId}` | Đã đăng nhập |
+| POST | `/api/v1/admin/movies` | Admin |
+| PATCH | `/api/v1/admin/movies/{movieId}` | Admin |
+| DELETE | `/api/v1/admin/movies/{movieId}` | Admin |
+
+Ví dụ tạo phim:
+
+```powershell
+$movie = @{
+  title = 'Interstellar'
+  description = 'Một chuyến đi tìm nơi sống mới ngoài Trái Đất.'
+  durationMinutes = 169
+  ageRating = 'T13'
+  releaseDate = '2026-10-01'
+  posterUrl = $null
+  status = 'NOW_SHOWING'
+} | ConvertTo-Json
+
+Invoke-RestMethod 'http://localhost:8080/api/v1/admin/movies' -Method Post -Headers $headers -ContentType 'application/json' -Body $movie
+```
+
+`PATCH` chỉ đổi field có trong JSON; `posterUrl: null` xóa ảnh. Body rỗng, field bắt buộc null, title/description rỗng, duration không dương, ngày sai định dạng và kiểu JSON sai đều bị từ chối. `DELETE` xóa mềm nên hàng vẫn còn trong database, nhưng không còn xuất hiện ở Movie API hay contract Theater.
+
+Movie trả `422` cho validation, `404` với mã `MOVIE_NOT_FOUND` khi không còn phim, `401` khi thiếu token và `403` khi token không có quyền Admin. Response lỗi dùng envelope chung và trả `X-Request-Id`.
+
+## Kiểm thử Movie
+
+```powershell
+.\mvnw.cmd '-Dtest=MovieServiceTest,MovieApiTest' test
+```
+
+Bộ này gồm 30 unit test service và 43 API test. Xem kết quả lần chạy gần nhất và phạm vi kiểm thử ở [docs/kiem-thu-movie.md](docs/kiem-thu-movie.md).
+
+## K6 và báo cáo hiệu năng
+
+[load-test/MOVIE.md](load-test/MOVIE.md) hướng dẫn seed dữ liệu Movie, chạy smoke/read test và ghi nhận CPU/RAM. `smoke.js` và `movie-read.js` dùng JWT theo cấu hình hiện tại.
+
+[Mẫu báo cáo hiệu năng Movie](docs/bao-cao-hieu-nang-mau.md) để trống số liệu cho đến khi có lượt đo thực tế.
 
 Dừng các container nhưng giữ dữ liệu PostgreSQL:
 

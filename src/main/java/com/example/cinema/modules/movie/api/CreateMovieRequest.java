@@ -3,14 +3,40 @@ package com.example.cinema.modules.movie.api;
 import com.example.cinema.modules.movie.business.AgeRating;
 import com.example.cinema.modules.movie.business.MovieStatus;
 import java.time.LocalDate;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 
+@Schema(additionalProperties = Schema.AdditionalPropertiesValue.FALSE)
 public class CreateMovieRequest {
+    @NotBlank @Size(max = 200)
+    @JsonDeserialize(using = MovieStringDeserializer.class)
+    @Schema(example = "Interstellar")
     private String title;
+    @NotBlank
+    @JsonDeserialize(using = MovieStringDeserializer.class)
     private String description;
+    @NotNull @Positive
+    @JsonDeserialize(using = MovieIntegerDeserializer.class)
+    @Schema(example = "169")
     private Integer durationMinutes;
+    @NotNull
+    @JsonDeserialize(using = MovieAgeRatingDeserializer.class)
     private AgeRating ageRating;
+    @NotNull
+    @Schema(type = "string", format = "date", example = "2026-10-01")
+    @JsonDeserialize(using = MovieDateDeserializer.class)
     private LocalDate releaseDate;
+    @Size(max = 500)
+    @JsonDeserialize(using = MovieStringDeserializer.class)
+    @Schema(types = {"string", "null"}, maxLength = 500)
     private String posterUrl;
+    @NotNull
+    @JsonDeserialize(using = MovieStatusDeserializer.class)
     private MovieStatus status;
 
     public CreateMovieRequest() {
@@ -70,6 +96,11 @@ public class CreateMovieRequest {
 
     public void setStatus(MovieStatus status) {
         this.status = status;
+    }
+
+    @JsonAnySetter
+    public void rejectUnknownField(String fieldName, Object value) {
+        throw new IllegalArgumentException("Unknown movie field: " + fieldName);
     }
     
 }
