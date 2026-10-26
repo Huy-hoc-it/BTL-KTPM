@@ -8,18 +8,25 @@ import java.util.EnumSet;
 import java.util.Set;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 
 @Schema(description = "Field không gửi giữ nguyên. Gửi posterUrl: null để xóa ảnh.",
         minProperties = 1, additionalProperties = Schema.AdditionalPropertiesValue.FALSE)
 public class UpdateMovieRequest {
+    @JsonDeserialize(using = MovieStringDeserializer.class)
     private String title;
+    @JsonDeserialize(using = MovieStringDeserializer.class)
     private String description;
+    @JsonDeserialize(using = MovieIntegerDeserializer.class)
     private Integer durationMinutes;
+    @JsonDeserialize(using = MovieAgeRatingDeserializer.class)
     private AgeRating ageRating;
     @JsonDeserialize(using = MovieDateDeserializer.class)
     private LocalDate releaseDate;
     @Schema(types = {"string", "null"}, maxLength = 500)
+    @JsonDeserialize(using = MovieStringDeserializer.class)
     private String posterUrl;
+    @JsonDeserialize(using = MovieStatusDeserializer.class)
     private MovieStatus status;
     private final Set<MovieField> providedFields = EnumSet.noneOf(MovieField.class);
 
@@ -94,4 +101,9 @@ public class UpdateMovieRequest {
     }
 
     public Set<MovieField> providedFields() { return Set.copyOf(providedFields); }
+
+    @JsonAnySetter
+    public void rejectUnknownField(String fieldName, Object value) {
+        throw new IllegalArgumentException("Unknown movie field: " + fieldName);
+    }
 }
