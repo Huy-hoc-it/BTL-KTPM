@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration",
+                "cinema.booking.persistence.enabled=false",
                 "management.endpoint.health.group.readiness.include=readinessState",
                 "DEMO_ADMIN_USERNAME=startup-admin",
                 "DEMO_ADMIN_PASSWORD=demo-pass-1234"

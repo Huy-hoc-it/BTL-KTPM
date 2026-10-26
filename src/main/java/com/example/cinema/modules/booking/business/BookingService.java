@@ -6,6 +6,7 @@ import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatSnapsho
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeSnapshot;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.ShowtimeState;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@ConditionalOnProperty(prefix = "cinema.booking.persistence", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class BookingService {
 
     private static final BigDecimal VIP_MULTIPLIER = new BigDecimal("1.20");

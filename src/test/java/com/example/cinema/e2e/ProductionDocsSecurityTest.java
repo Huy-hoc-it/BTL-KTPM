@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @SpringBootTest(properties = {
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration",
+        "cinema.booking.persistence.enabled=false",
         "management.endpoint.health.group.readiness.include=readinessState",
         "cinema.jwt.secret=test-only-jwt-secret-for-production-profile-test",
         "cinema.jwt.expiration-seconds=3600"

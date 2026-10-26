@@ -4,6 +4,7 @@ import com.example.cinema.modules.booking.business.BookingService;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@ConditionalOnProperty(prefix = "cinema.booking.persistence", name = "enabled", havingValue = "true", matchIfMissing = true)
 @RequestMapping("/api/v1/bookings")
 public class BookingController {
 

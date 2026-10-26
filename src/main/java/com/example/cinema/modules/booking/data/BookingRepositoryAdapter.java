@@ -7,9 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
+@ConditionalOnProperty(prefix = "cinema.booking.persistence", name = "enabled", havingValue = "true", matchIfMissing = true)
 class BookingRepositoryAdapter implements BookingRepository {
 
     private final BookingJpaRepository bookingJpaRepository;
