@@ -6,12 +6,13 @@ import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,13 +27,16 @@ public class BookingController {
     }
 
     @PostMapping
-    public ResponseEntity<BookingDetailResponse> create(@RequestBody CreateBookingRequest request) {
+    public ResponseEntity<BookingDetailResponse> create(
+            @RequestBody CreateBookingRequest request,
+            @AuthenticationPrincipal UUID userId
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingDetailResponse.from(
-                bookingService.createBooking(request.getUserId(), request.getShowtimeId(), request.getSeatIds())));
+                bookingService.createBooking(userId, request.getShowtimeId(), request.getSeatIds())));
     }
 
     @GetMapping
-    public ResponseEntity<List<BookingSummaryResponse>> getAllByUserId(@RequestParam UUID userId) {
+    public ResponseEntity<List<BookingSummaryResponse>> getAllByUserId(@AuthenticationPrincipal UUID userId) {
         List<BookingSummaryResponse> response = bookingService.getBookingsByUserId(userId).stream()
                 .map(BookingSummaryResponse::from)
                 .toList();
@@ -42,9 +46,18 @@ public class BookingController {
     @GetMapping("/{bookingId}")
     public ResponseEntity<BookingDetailResponse> getByUserIdAndBookingId(
             @PathVariable UUID bookingId,
-            @RequestParam UUID userId
+            @AuthenticationPrincipal UUID userId
     ) {
         return ResponseEntity.ok(BookingDetailResponse.from(
                 bookingService.getBookingByUserId(userId, bookingId)));
+    }
+
+    @DeleteMapping("/{bookingId}")
+    public ResponseEntity<Void> cancel(
+            @PathVariable UUID bookingId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        bookingService.cancelBooking(userId, bookingId);
+        return ResponseEntity.noContent().build();
     }
 }

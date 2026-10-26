@@ -1,6 +1,7 @@
 package com.example.cinema.unit.booking;
 
 import com.example.cinema.modules.booking.business.Booking;
+import com.example.cinema.modules.booking.business.BookingNotFoundException;
 import com.example.cinema.modules.booking.business.BookingService;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatKind;
 import com.example.cinema.modules.theater.business.ShowtimeModuleApi.SeatSnapshot;
@@ -178,6 +179,19 @@ class BookingServiceTest {
 
         assertNotNull(newBooking.getBookingId());
         assertEquals(1, bookingRepository.getBookingCount());
+    }
+
+    @Test
+    void cancellationRequiresOwnershipAndReleasesSeats() {
+        Booking booking = bookingService.createBooking(userId, showtimeId, List.of(standardSeatId));
+
+        assertThrows(BookingNotFoundException.class,
+                () -> bookingService.cancelBooking(UUID.randomUUID(), booking.getBookingId()));
+        assertEquals(1, bookingRepository.getBookingCount());
+
+        bookingService.cancelBooking(userId, booking.getBookingId());
+        assertEquals(0, bookingRepository.getBookingCount());
+        assertDoesNotThrow(() -> bookingService.createBooking(UUID.randomUUID(), showtimeId, List.of(standardSeatId)));
     }
 
     @Test
