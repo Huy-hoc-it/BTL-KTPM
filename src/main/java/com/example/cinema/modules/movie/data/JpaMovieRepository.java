@@ -85,4 +85,11 @@ public class JpaMovieRepository implements MovieRepository {
         }
         return new MoviePage(movies, movieEntities.getTotalElements());
     }
+
+    @Override
+    public Optional<Movie> findUndeletedByIdForUpdate(UUID id) {
+        Optional<MovieEntity> entity = springDataMovieRepository.findUndeletedByIdForUpdate(id);
+        if (entity.isEmpty()) { return Optional.empty(); }
+        return Optional.of(toMovie(entity.get()));
+    }
 }

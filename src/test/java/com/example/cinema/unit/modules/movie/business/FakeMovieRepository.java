@@ -11,6 +11,7 @@ class FakeMovieRepository implements MovieRepository {
         if (movie == null || movie.getDeletedAt() != null) { return Optional.empty(); }
         return Optional.of(movie);
     }
+    public Optional<Movie> findUndeletedByIdForUpdate(UUID id) { return findUndeletedById(id); }
     public MoviePage findUndeleted(int page, int pageSize, MovieStatus status) {
         List<Movie> all = rows.values().stream()
                 .filter(movie -> movie.getDeletedAt() == null && (status == null || movie.getStatus() == status))

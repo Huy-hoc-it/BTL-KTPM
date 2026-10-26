@@ -71,7 +71,7 @@ public class MovieService implements MovieModuleApi {
             MovieStatus status,
             Set<MovieField> providedFields) {
         MovieValidation.validatePatch(title, description, durationMinutes, ageRating, releaseDate, posterUrl, status, providedFields);
-        Optional<Movie> movieOpt = movieRepository.findUndeletedById(movieId);
+        Optional<Movie> movieOpt = movieRepository.findUndeletedByIdForUpdate(movieId);
         if (movieOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -115,7 +115,7 @@ public class MovieService implements MovieModuleApi {
 
     @Transactional
     public boolean softDelete(UUID movieId) {
-        Optional<Movie> movieOpt = movieRepository.findUndeletedById(movieId);
+        Optional<Movie> movieOpt = movieRepository.findUndeletedByIdForUpdate(movieId);
         if (movieOpt.isEmpty()) {
             return false;
         }
