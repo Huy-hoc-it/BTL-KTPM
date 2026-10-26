@@ -24,7 +24,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-@SpringBootTest
+@SpringBootTest(properties = "cinema.booking.persistence.enabled=false")
 @ActiveProfiles("test")
 class TheaterPersistenceIntegrationTest {
 
