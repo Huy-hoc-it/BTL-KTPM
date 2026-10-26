@@ -6,8 +6,11 @@ import com.example.cinema.modules.movie.business.AgeRating;
 import com.example.cinema.modules.movie.business.MovieField;
 import java.util.EnumSet;
 import java.util.Set;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+@Schema(description = "Field không gửi giữ nguyên. Gửi posterUrl: null để xóa ảnh.",
+        minProperties = 1, additionalProperties = Schema.AdditionalPropertiesValue.FALSE)
 public class UpdateMovieRequest {
     private String title;
     private String description;
@@ -15,6 +18,7 @@ public class UpdateMovieRequest {
     private AgeRating ageRating;
     @JsonDeserialize(using = MovieDateDeserializer.class)
     private LocalDate releaseDate;
+    @Schema(types = {"string", "null"}, maxLength = 500)
     private String posterUrl;
     private MovieStatus status;
     private final Set<MovieField> providedFields = EnumSet.noneOf(MovieField.class);
