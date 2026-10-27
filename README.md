@@ -111,7 +111,7 @@ Bộ này gồm 30 unit test service và 43 API test. Xem kết quả lần ch�
 
 [load-test/README.md](load-test/README.md) hướng dẫn seed, chạy smoke/read-heavy/booking/contention, thu CPU/RAM và ghi kết quả. `smoke.js` cần JWT Admin để ghi Movie; các GET Movie được gọi không cần token.
 
-[Mẫu báo cáo hiệu năng](docs/bao-cao-hieu-nang-mau.md) để trống số liệu cho đến khi có lượt đo thực tế.
+[Báo cáo hiệu năng baseline](docs/bao-cao-hieu-nang-mau.md) tổng hợp kết quả đo đạc thực tế của Movie Read và Booking Workload theo chuẩn SPEC.
 
 Dừng các container nhưng giữ dữ liệu PostgreSQL:
 
