@@ -241,6 +241,14 @@ class ApplicationSmokeTest {
     }
 
     @Test
+    void movieGetRoutesDoNotRequireAuthentication() {
+        assertThat(restTemplate.getForEntity("/api/v1/movies", JsonNode.class).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(restTemplate.getForEntity("/api/v1/movies/" + UUID.randomUUID(), JsonNode.class).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void publicRoutesIgnoreExpiredBearerToken() {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(expiredToken(UUID.randomUUID()));

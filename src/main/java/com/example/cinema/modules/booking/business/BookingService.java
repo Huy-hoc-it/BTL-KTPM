@@ -78,6 +78,12 @@ public class BookingService {
         bookingRepository.deleteById(booking.getBookingId());
     }
 
+    @Transactional
+    public void cancelBooking(UUID userId, UUID bookingId) {
+        Booking booking = getBookingByUserId(userId, bookingId);
+        deleteBooking(booking);
+    }
+
     public List<Booking> getBookingsByUserId(UUID userId) {
         if (userId == null) {
             throw new IllegalArgumentException("userId must not be null");
