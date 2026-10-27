@@ -67,26 +67,18 @@ export function adminToken() {
     if (response.status !== 200 || !result || !result.accessToken) fail('Admin login failed');
     return result.accessToken;
 }
-export function cleanupUsers(users, allowedShowtimes) {
+export function cleanupUsers(users) {
     for (const user of users) {
-        let page = 1;
-        let totalPages = 1;
-        do {
-            const response = request('GET', '/api/v1/bookings/me?page=' + page + '&pageSize=100', null,
-                user.token, [200], 'cleanup', 'cleanup');
-            const result = parse(response);
-            if (response.status !== 200 || !result || !Array.isArray(result.data)) fail('Cannot list bookings for cleanup');
-            totalPages = result.meta ? result.meta.totalPages : 1;
-            for (const booking of result.data) {
-                if (booking.status === 'CONFIRMED') {
-                    if (!allowedShowtimes.includes(booking.showtimeId)) fail('Refusing to cancel bookings outside fixture showtimes');
-                    const cancelled = request('DELETE', '/api/v1/bookings/' + booking.bookingId, null,
-                        user.token, [204], 'cleanup', 'cleanup');
-                    if (cancelled.status !== 204) fail('Fixture booking cleanup failed');
-                }
-            }
-            page += 1;
-        } while (page <= totalPages);
+        const response = request('GET', '/api/v1/bookings', null, user.token, [200], 'cleanup', 'cleanup');
+        const result = parse(response);
+        const bookings = Array.isArray(result) ? result : result && result.data;
+        if (response.status !== 200 || !Array.isArray(bookings)) fail('Cannot list bookings for cleanup');
+        for (const booking of bookings) {
+            if (!booking.bookingId) fail('Booking list did not return bookingId');
+            const cancelled = request('DELETE', '/api/v1/bookings/' + booking.bookingId, null,
+                user.token, [204], 'cleanup', 'cleanup');
+            if (cancelled.status !== 204) fail('Fixture booking cleanup failed');
+        }
     }
 }
 export function summary(name, result) {

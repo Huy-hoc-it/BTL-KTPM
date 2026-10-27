@@ -37,7 +37,7 @@ Lượt thử nhanh có thể đặt `MOVIE_COUNT=5`, `DELETED_COUNT=0`, `WARMUP
 
 `booking.js` lặp tỷ trọng đúng theo SPEC: 35% danh sách phim, 25% lịch chiếu, 25% trạng thái ghế, 10% POST booking và 5% danh sách booking của user. Mỗi user dùng ghế riêng; các booking được hủy trước lượt đặt kế tiếp và khi teardown. Cleanup tạo thêm request ngoài tỷ trọng workload, nên phải ghi nhận khi phân tích.
 
-Sau khi code Booking hỗ trợ principal, `GET /api/v1/bookings/me`, hủy booking và response lỗi theo SPEC:
+Booking hiện trả các booking của user đã đăng nhập tại `GET /api/v1/bookings`; kịch bản dùng đúng route này và hủy các booking của tài khoản fixture chuyên dụng:
 
 ~~~bash
 k6 run --include-system-env-vars load-test/booking.js

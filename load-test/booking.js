@@ -14,7 +14,7 @@ export function setup() {
         const profile = data(request('GET','/api/v1/users/me',null,user.token,[200],'setup','setup'));
         if (!profile || profile.id !== user.userId) fail('Fixture user does not match its token');
     }
-    cleanupUsers(chosen,[saved.showtimeId]);
+    cleanupUsers(chosen);
 }
 export function traffic() {
     const userIndex = (exec.scenario.name === 'measure' ? VUS : 0) + (exec.vu.idInTest - 1) % VUS;
@@ -35,8 +35,8 @@ export function traffic() {
         const result = data(response);
         if (response.status === 201 && result && result.bookingId) bookingsByUser[user.userId] = result.bookingId;
         else fail('Booking did not return its ID');
-    } else request('GET','/api/v1/bookings/me?page=1&pageSize=20',null,user.token);
+    } else request('GET','/api/v1/bookings',null,user.token);
     sleep(0.1);
 }
-export function teardown() { cleanupUsers(saved.loadUsers.slice(0,2*VUS),[saved.showtimeId]); }
+export function teardown() { cleanupUsers(saved.loadUsers.slice(0,2*VUS)); }
 export function handleSummary(result) { return summary('booking',result); }
