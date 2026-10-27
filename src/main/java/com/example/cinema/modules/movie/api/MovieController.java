@@ -88,7 +88,7 @@ public class MovieController {
     }
 
     @GetMapping("/movies/{movieId}")
-    @Operation(summary = "Xem chi tiết phim", description = "Cần đăng nhập. Phim đã xóa mềm được xem là không tồn tại.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Xem chi tiết phim", description = "Public. Phim đã xóa mềm được xem là không tồn tại.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Thông tin phim", content = @Content(schema = @Schema(implementation = SingleMovieResponse.class))),
         @ApiResponse(responseCode = "404", description = "Không tìm thấy phim", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
@@ -105,7 +105,7 @@ public class MovieController {
     }
 
     @GetMapping("/movies")
-    @Operation(summary = "Danh sách phim", description = "Cần đăng nhập. Sắp xếp createdAt giảm dần, rồi id giảm dần; không bao gồm phim đã xóa.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Danh sách phim", description = "Public. Sắp xếp createdAt giảm dần, rồi id giảm dần; không bao gồm phim đã xóa.")
     @ApiResponse(responseCode = "200", description = "Danh sách và phân trang", content = @Content(schema = @Schema(implementation = MovieListResponse.class)))
     public ResponseEntity<MovieListResponse> list(
             @Parameter(description = "Trang bắt đầu từ 1", schema = @Schema(minimum = "1", defaultValue = "1"))

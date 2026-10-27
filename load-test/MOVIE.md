@@ -9,7 +9,7 @@ Các script gửi HTTP tới ứng dụng đang chạy; chúng không tự khở
 
 ## Chuẩn bị dữ liệu
 
-Seed thêm phim vào DB và không xóa dữ liệu cũ. Dùng môi trường đo riêng nếu không muốn làm bẩn DB phát triển. Fixture cục bộ có JWT Admin nên không commit file `fixtures.local.json`.
+Seed thêm phim vào DB và không xóa dữ liệu cũ. Dùng môi trường đo riêng nếu không muốn làm bẩn DB phát triển. Fixture cục bộ có JWT Admin để tạo/xóa phim nên không commit file `fixtures.local.json`; GET Movie trong cả hai kịch bản không gửi token.
 
 ~~~powershell
 $env:BASE_URL = 'http://127.0.0.1:8080'
@@ -23,7 +23,7 @@ k6 run load-test/smoke.js
 k6 run load-test/movie-read.js
 ~~~
 
-Có thể dùng `ADMIN_TOKEN` thay cho username/password. Mặc định seed 1.000 phim, xóa mềm 50 phim đầu và lưu token để GET Movie đã đăng nhập. `movie-read.js` dùng tối đa 100 ID phim còn lại. Không seed lại giữa các lượt so sánh vì dữ liệu cũ vẫn ảnh hưởng DB.
+Có thể dùng `ADMIN_TOKEN` thay cho username/password. Mặc định seed 1.000 phim, xóa mềm 50 phim đầu và lưu token Admin trong fixture. `movie-read.js` dùng tối đa 100 ID phim còn lại. Không seed lại giữa các lượt so sánh vì dữ liệu cũ vẫn ảnh hưởng DB.
 
 Để thử nhanh script, giảm `MOVIE_COUNT`, đặt `DELETED_COUNT=0`, `WARMUP_SECONDS=0`, `DURATION_SECONDS=5`. Lượt ngắn chỉ kiểm tra luồng chạy, không phải baseline.
 

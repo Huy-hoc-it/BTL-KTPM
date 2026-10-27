@@ -10,8 +10,8 @@ export default function () {
         const movie = data(created);
         if (!movie || !movie.id) fail('Cannot create smoke movie');
         movieId = movie.id;
-        const read = request('GET','/api/v1/movies/' + movieId,null,admin);
-        check(read, { 'Authenticated user reads created movie': r => data(r).id === movieId });
+        const read = request('GET','/api/v1/movies/' + movieId,null,null);
+        check(read, { 'Public endpoint reads created movie': r => data(r).id === movieId });
         const patched = request('PATCH','/api/v1/admin/movies/' + movieId,{ title: 'k6 updated', posterUrl: null },admin,[200]);
         check(patched, { 'PATCH keeps omitted duration': r => data(r).durationMinutes === 120 });
         request('POST','/api/v1/admin/movies',{},null,[401]);
@@ -20,7 +20,7 @@ export default function () {
     } finally {
         if (movieId) {
             request('DELETE','/api/v1/admin/movies/' + movieId,null,admin,[204]);
-            request('GET','/api/v1/movies/' + movieId,null,admin,[404]);
+            request('GET','/api/v1/movies/' + movieId,null,null,[404]);
         }
     }
 }

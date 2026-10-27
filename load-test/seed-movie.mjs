@@ -34,7 +34,6 @@ const fixture = {
     baseUrl: base,
     createdAt: new Date().toISOString(),
     scope: 'movie',
-    readToken: admin,
     movieIds: [],
     createdCount: count,
     deletedCount,

@@ -36,6 +36,8 @@ docker compose up -d --wait db
 
 Compose chỉ mở cổng PostgreSQL trên `127.0.0.1:5432`. Khi chạy bằng Maven, profile `local` chỉ mở API trên `127.0.0.1`; database/user/password mặc định là `cinema`. Có thể ghi đè bằng `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` và `SERVER_PORT`. Nếu chủ động đặt `SERVER_ADDRESS` để mở API ra mạng, hãy đặt `JWT_SECRET` riêng đủ mạnh.
 
+Flyway tự chạy các migration khi API khởi động. Profile `local` có thể tạo Admin demo theo biến môi trường; ứng dụng hiện không seed sẵn Customer, Movie, phòng hay suất chiếu. Tạo dữ liệu tải bằng hướng dẫn trong `load-test/README.md`.
+
 ## Chạy bằng Docker Compose
 
 ```powershell
@@ -71,8 +73,8 @@ Nếu đã đổi `DEMO_ADMIN_USERNAME` hoặc `DEMO_ADMIN_PASSWORD` trong `.env
 
 | Method | Endpoint | Quyền |
 |---|---|---|
-| GET | `/api/v1/movies?page=1&pageSize=20&status=NOW_SHOWING` | Đã đăng nhập |
-| GET | `/api/v1/movies/{movieId}` | Đã đăng nhập |
+| GET | `/api/v1/movies?page=1&pageSize=20&status=NOW_SHOWING` | Public |
+| GET | `/api/v1/movies/{movieId}` | Public |
 | POST | `/api/v1/admin/movies` | Admin |
 | PATCH | `/api/v1/admin/movies/{movieId}` | Admin |
 | DELETE | `/api/v1/admin/movies/{movieId}` | Admin |
@@ -95,7 +97,7 @@ Invoke-RestMethod 'http://localhost:8080/api/v1/admin/movies' -Method Post -Head
 
 `PATCH` chỉ đổi field có trong JSON; `posterUrl: null` xóa ảnh. Body rỗng, field bắt buộc null, title/description rỗng, duration không dương, ngày sai định dạng và kiểu JSON sai đều bị từ chối. `DELETE` xóa mềm nên hàng vẫn còn trong database, nhưng không còn xuất hiện ở Movie API hay contract Theater.
 
-Movie trả `422` cho validation, `404` với mã `MOVIE_NOT_FOUND` khi không còn phim, `401` khi thiếu token và `403` khi token không có quyền Admin. Response lỗi dùng envelope chung và trả `X-Request-Id`.
+Danh sách và chi tiết Movie là Public. Các thao tác ghi yêu cầu Admin; Movie trả `422` cho validation, `404` với mã `MOVIE_NOT_FOUND`, `401` khi thiếu token và `403` khi token không có quyền Admin. Response lỗi dùng envelope chung và trả `X-Request-Id`.
 
 ## Kiểm thử Movie
 
@@ -107,9 +109,9 @@ Bộ này gồm 30 unit test service và 43 API test. Xem kết quả lần ch�
 
 ## K6 và báo cáo hiệu năng
 
-[load-test/MOVIE.md](load-test/MOVIE.md) hướng dẫn seed dữ liệu Movie, chạy smoke/read test và ghi nhận CPU/RAM. `smoke.js` và `movie-read.js` dùng JWT theo cấu hình hiện tại.
+[load-test/README.md](load-test/README.md) hướng dẫn seed, chạy smoke/read-heavy/booking/contention, thu CPU/RAM và ghi kết quả. `smoke.js` cần JWT Admin để ghi Movie; các GET Movie được gọi không cần token.
 
-[Mẫu báo cáo hiệu năng Movie](docs/bao-cao-hieu-nang-mau.md) để trống số liệu cho đến khi có lượt đo thực tế.
+[Mẫu báo cáo hiệu năng](docs/bao-cao-hieu-nang-mau.md) để trống số liệu cho đến khi có lượt đo thực tế.
 
 Dừng các container nhưng giữ dữ liệu PostgreSQL:
 
