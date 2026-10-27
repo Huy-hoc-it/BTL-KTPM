@@ -3,3 +3,6 @@ target/
 .idea/
 *.iml
 .vscode/
+load-test/fixtures.local.json
+load-test/results/*
+!load-test/results/.gitkeep
