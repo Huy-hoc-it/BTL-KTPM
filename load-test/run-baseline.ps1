@@ -4,7 +4,8 @@ param(
     [int[]]$Levels = @(10,25,50),
     [int]$Repeats = 3,
     [int]$ApiProcessId = 0,
-    [int[]]$DatabaseProcessIds = @()
+    [int[]]$DatabaseProcessIds = @(),
+    [string[]]$DockerContainerNames = @()
 )
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath (Split-Path $PSScriptRoot -Parent)
@@ -61,8 +62,9 @@ foreach ($level in $Levels) {
         if ($Scenario -eq 'contention') {
             $env:CONTENTION_RUN_INDEX = "$(([Array]::IndexOf($Levels, $level) * $Repeats) + $repeat)"
         }
-        $client = Start-Process -FilePath $K6 -ArgumentList @('run','--quiet',('-'+'-out'),('"json=' + (Join-Path $runRoot "$name-raw.json") + '"'),"load-test/$Scenario.js") -WindowStyle Hidden -PassThru -WorkingDirectory (Get-Location).Path -RedirectStandardOutput (Join-Path $runRoot "$name.log") -RedirectStandardError (Join-Path $runRoot "$name-error.log")
+        $client = Start-Process -FilePath $K6 -ArgumentList @('run','--quiet','--include-system-env-vars',('-'+'-out'),('"json=' + (Join-Path $runRoot "$name-raw.json") + '"'),"load-test/$Scenario.js") -WindowStyle Hidden -PassThru -WorkingDirectory (Get-Location).Path -RedirectStandardOutput (Join-Path $runRoot "$name.log") -RedirectStandardError (Join-Path $runRoot "$name-error.log")
         $samples = [System.Collections.Generic.List[object]]::new()
+        $dockerSamples = [System.Collections.Generic.List[object]]::new()
         $previousCpu = @{}
         $previousTime = [DateTime]::UtcNow
         while (!$client.HasExited) {
@@ -97,10 +99,25 @@ foreach ($level in $Levels) {
                     cpuPercentMachine=[Math]::Round(100*$cpuDelta/$elapsed/[Environment]::ProcessorCount,3);
                     privateMiB=[Math]::Round($privateBytes/1MB,3);workingSetMiB=[Math]::Round($workingBytes/1MB,3)})
             }
+            if ($DockerContainerNames.Count) {
+                $dockerOutput = & docker stats --no-stream --format '{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}' @DockerContainerNames
+                if ($LASTEXITCODE -ne 0) { throw 'Could not sample Docker container resources.' }
+                foreach ($line in $dockerOutput) {
+                    $parts = "$line" -split '\|', 3
+                    if ($parts.Count -ne 3) { continue }
+                    $memory = $parts[2] -split '/', 2
+                    if ($memory.Count -ne 2) { continue }
+                    $dockerSamples.Add([pscustomobject]@{timestampUtc=$now.ToString('o');container=$parts[0];
+                        cpuPercent=$parts[1].Trim();memoryUsage=$memory[0].Trim();memoryLimit=$memory[1].Trim()})
+                }
+            }
             $previousTime = $now; Start-Sleep -Seconds 1; $client.Refresh()
         }
         $client.WaitForExit()
         $samples | Export-Csv -LiteralPath (Join-Path $runRoot "$name-resources.csv") -NoTypeInformation -Encoding UTF8
+        if ($DockerContainerNames.Count) {
+            $dockerSamples | Export-Csv -LiteralPath (Join-Path $runRoot "$name-docker-resources.csv") -NoTypeInformation -Encoding UTF8
+        }
         if ($client.ExitCode -ne 0) { throw "k6 failed: $name. Results are retained in $runRoot" }
         Write-Output "Completed $name"
     }

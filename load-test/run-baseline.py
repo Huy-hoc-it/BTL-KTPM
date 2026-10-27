@@ -190,7 +190,7 @@ def main():
             if args.scenario == "contention":
                 contention_index += 1
                 env["CONTENTION_RUN_INDEX"] = str(contention_index)
-            command = [args.k6, "run", "--quiet", "--out", f"json={raw_path}", str(LOAD / f"{args.scenario}.js")]
+            command = [args.k6, "run", "--quiet", "--include-system-env-vars", "--out", f"json={raw_path}", str(LOAD / f"{args.scenario}.js")]
             with (run_root / f"{name}.log").open("w") as stdout, \
                     (run_root / f"{name}-error.log").open("w") as stderr, \
                     resource_path.open("w", newline="") as resource_file:

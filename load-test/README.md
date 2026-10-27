@@ -27,8 +27,8 @@ Có thể đặt `ADMIN_TOKEN` thay cho username/password. Seed đầy đủ t�
 `smoke.js` tạo, đọc Public, sửa, kiểm tra validation và xóa mềm một phim. `movie-read.js` dùng 50% GET danh sách và 50% GET chi tiết, không gửi JWT cho GET Movie.
 
 ~~~bash
-k6 run load-test/smoke.js
-k6 run load-test/movie-read.js
+k6 run --include-system-env-vars load-test/smoke.js
+k6 run --include-system-env-vars load-test/movie-read.js
 ~~~
 
 Lượt thử nhanh có thể đặt `MOVIE_COUNT=5`, `DELETED_COUNT=0`, `WARMUP_SECONDS=0`, `DURATION_SECONDS=5`; không dùng lượt này làm baseline.
@@ -40,7 +40,7 @@ Lượt thử nhanh có thể đặt `MOVIE_COUNT=5`, `DELETED_COUNT=0`, `WARMUP
 Sau khi code Booking hỗ trợ principal, `GET /api/v1/bookings/me`, hủy booking và response lỗi theo SPEC:
 
 ~~~bash
-k6 run load-test/booking.js
+k6 run --include-system-env-vars load-test/booking.js
 ~~~
 
 ## Tranh ghế
@@ -50,7 +50,7 @@ Mỗi lượt dùng nhiều user tranh đúng một ghế: kỳ vọng một 201
 ~~~bash
 export VUS=10
 export CONTENTION_RUN_INDEX=1
-k6 run load-test/contention.js
+k6 run --include-system-env-vars load-test/contention.js
 ~~~
 
 Chạy ma trận 10/25/50 VU, ba lượt mỗi mức, với index 1–9. Không chạy lại cùng index trước khi hoàn tất vì ghế của lượt thắng vẫn được giữ.
@@ -67,5 +67,7 @@ python load-test/run-baseline.py --scenario contention --api-pid "$API_PID" --da
 Mặc định chạy 10/25/50 VU, ba lượt mỗi mức, warm-up 30 giây và đo 120 giây cho Movie/Booking. Contention là batch một lần/VU, dùng chín ghế fixture riêng. Kết quả raw k6, summary, log, CSV tài nguyên và `environment.json` được lưu trong `load-test/results/` (không commit raw result nếu có credential hoặc dữ liệu nhạy cảm).
 
 Ghi cùng commit, dataset, CPU/vCPU/quota, RAM, Java, PostgreSQL, k6, JVM flags, pool, thời lượng, warm-up và think time. Throughput lấy từ `measured_requests / 120`; lọc CPU/RSS theo timestamp phase `measure`, không lấy trung bình gồm warm-up. `summedRssMiB` có thể đếm trùng trang nhớ chia sẻ.
+
+Trên Windows, dùng `run-baseline.ps1` với PID tiến trình Java. Nếu PostgreSQL chạy trong Docker, thêm `-DockerContainerNames btl-ktpm-db-1` để ghi `docker stats` theo giây vào CSV riêng. Khi chạy k6 thủ công, thêm `--include-system-env-vars` để script nhận fixture, URL và mức VU từ shell.
 
 Điền [mẫu báo cáo](../docs/bao-cao-hieu-nang-mau.md) sau ba lượt mỗi mức. Báo p50/p95/p99, throughput, lỗi kỹ thuật, lỗi nghiệp vụ và tài nguyên; với contention ghi số winner, conflict đúng mã và xác nhận DB không có ghế bị giữ trùng. Chưa chạy thì để là chưa đo.

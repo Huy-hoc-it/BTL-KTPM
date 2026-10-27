@@ -19,8 +19,8 @@ $env:MOVIE_COUNT = '1000'
 $env:DELETED_COUNT = '50'
 node load-test/seed-movie.mjs
 $env:FIXTURES = (Resolve-Path 'load-test/fixtures.local.json').Path
-k6 run load-test/smoke.js
-k6 run load-test/movie-read.js
+k6 run --include-system-env-vars load-test/smoke.js
+k6 run --include-system-env-vars load-test/movie-read.js
 ~~~
 
 Có thể dùng `ADMIN_TOKEN` thay cho username/password. Mặc định seed 1.000 phim, xóa mềm 50 phim đầu và lưu token Admin trong fixture. `movie-read.js` dùng tối đa 100 ID phim còn lại. Không seed lại giữa các lượt so sánh vì dữ liệu cũ vẫn ảnh hưởng DB.
@@ -36,7 +36,7 @@ $env:GIT_COMMIT = git rev-parse HEAD
 $env:VUS = '25'
 $env:WARMUP_SECONDS = '30'
 $env:DURATION_SECONDS = '120'
-k6 run --out json=load-test/results/movie-read-25vu-run1-raw.json load-test/movie-read.js
+k6 run --include-system-env-vars --out json=load-test/results/movie-read-25vu-run1-raw.json load-test/movie-read.js
 ~~~
 
 Chạy riêng 10, 25 và 50 VU, ít nhất ba lượt mỗi mức; giữ nguyên dataset, cấu hình JVM/pool và phần cứng. Tính throughput bằng số request trong phase đo chia thời lượng phase đó, không dùng `http_reqs.rate` của toàn lượt vì metric này còn tính setup và warm-up.

@@ -74,7 +74,7 @@ fs.mkdirSync('load-test/results',{recursive:true});
 fs.writeFileSync(fixtureFile,JSON.stringify(saved));
 const results=[];
 async function run(name,script,expectedExit) {
-    const child=spawn(k6,['run','--quiet','load-test/'+script+'.js'],{env:{...process.env,BASE_URL:base,FIXTURES:fixtureFile,
+    const child=spawn(k6,['run','--quiet','--include-system-env-vars','load-test/'+script+'.js'],{env:{...process.env,BASE_URL:base,FIXTURES:fixtureFile,
         ADMIN_TOKEN:'stub-admin',VUS:'3',WARMUP_SECONDS:'1',DURATION_SECONDS:'2',SUMMARY_PATH:'load-test/results/client-'+name+'.json'},windowsHide:true});
     let output='';child.stdout.on('data',value=>output+=value);child.stderr.on('data',value=>output+=value);
     const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',resolve);});
