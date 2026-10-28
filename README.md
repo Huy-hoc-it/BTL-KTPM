@@ -1,127 +1,173 @@
 # Cinema Backend
 
-Backend quản lý rạp phim. Hiện đã có đăng ký, đăng nhập, JWT Bearer và API xem hồ sơ; Movie có CRUD/xóa mềm; Theater quản lý phòng, sơ đồ ghế và suất chiếu; Booking hỗ trợ tạo/xem booking và truy vấn trạng thái ghế. Phạm vi nghiệp vụ và kế hoạch được mô tả trong `docs/SPEC.md` và `docs/work_plan.md`.
+REST API quản lý rạp phim gồm đăng ký/đăng nhập, phim, phòng chiếu, suất chiếu, ghế và đặt vé. Hệ thống được xây dựng dưới dạng **modular monolith**, chạy bằng Spring Boot và PostgreSQL.
 
-## Kiến trúc
+## 1. Chức năng chính
 
-Ứng dụng dùng kiến trúc modular monolith. Mỗi module nghiệp vụ được chia thành ba tầng `api -> business -> data`: API nhận/trả JSON, business xử lý quy tắc nghiệp vụ và định nghĩa repository, data triển khai truy cập PostgreSQL bằng JPA. Các module chạy trong một Spring Boot application.
+| Module | Chức năng |
+|---|---|
+| Identity | Đăng ký Customer, đăng nhập JWT, xem hồ sơ hiện tại |
+| Movie | Xem danh sách/chi tiết phim; Admin tạo, cập nhật và xóa mềm phim |
+| Theater | Quản lý phòng và sơ đồ ghế; tạo, xem và hủy suất chiếu |
+| Booking | Xem trạng thái ghế; Customer tạo, xem và hủy booking của mình |
 
-### Contract Theater và Booking
+Vai trò trong hệ thống:
 
-Theater cung cấp snapshot suất và ghế qua public business API; Booking kiểm tra phòng của ghế, tổng hợp trạng thái ghế và triển khai guard ngăn hủy suất đã có booking. Cả đặt vé và hủy suất khóa cùng hàng suất trong transaction. Xem [contract tích hợp](docs/theater_booking_contract.md).
+- **Guest:** đăng ký, đăng nhập, xem phim, suất chiếu và trạng thái ghế.
+- **Customer:** có quyền của Guest và quản lý booking của chính mình.
+- **Admin:** quản lý phim, phòng chiếu và suất chiếu.
 
-## Yêu cầu
+## 2. Công nghệ
 
-- Java 21 để chạy ứng dụng và kiểm thử bằng Maven.
-- Docker Desktop hoặc Docker Engine với Docker Compose để chạy PostgreSQL, ứng dụng và các kiểm thử Testcontainers.
+- Java 21, Spring Boot 3.5, Maven Wrapper.
+- Spring Web MVC, Spring Security, JWT Bearer Token.
+- Spring Data JPA, PostgreSQL 17, Flyway.
+- Springdoc OpenAPI và Swagger UI.
+- JUnit 5, Mockito, ArchUnit, Testcontainers.
+- Docker, Docker Compose và GitHub Actions.
 
-## Chạy kiểm thử
+## 3. Kiến trúc
 
-```powershell
-.\mvnw.cmd clean verify
+Mã nguồn được chia theo module nghiệp vụ. Mỗi module tiếp tục chia thành ba tầng:
+
+```text
+HTTP/JSON
+   |
+api       Controller, request/response DTO, HTTP validation
+   |
+business  Service, domain model, business rule, repository interface
+   |
+data      JPA entity, Spring Data repository, repository adapter
+   |
+PostgreSQL
 ```
 
-`verify` chạy kiểm thử kiến trúc, kiểm thử HTTP cho health/security/error/OpenAPI và kiểm thử PostgreSQL thật bằng Testcontainers. Docker cần hoạt động cho kiểm thử PostgreSQL.
+Các module không truy cập trực tiếp repository của nhau. Quan hệ chính:
 
-Bản code tích hợp Theater–Booking đã qua **117 test, không lỗi, không bỏ qua**, gồm các tình huống đồng thời trên PostgreSQL (xác minh ngày 25/10/2026). Báo cáo nằm trong `target/surefire-reports` của thư mục chạy Maven.
-
-## Chạy local bằng Maven
-
-Khởi động PostgreSQL trước, ví dụ bằng service `db` trong Compose:
-
-```powershell
-docker compose up -d --wait db
-.\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=local'
+```text
+Booking -> Theater -> Movie
+Identity -> JWT principal dùng chung cho các API được bảo vệ
 ```
 
-Compose chỉ mở cổng PostgreSQL trên `127.0.0.1:5432`. Khi chạy bằng Maven, profile `local` chỉ mở API trên `127.0.0.1`; database/user/password mặc định là `cinema`. Có thể ghi đè bằng `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` và `SERVER_PORT`. Nếu chủ động đặt `SERVER_ADDRESS` để mở API ra mạng, hãy đặt `JWT_SECRET` riêng đủ mạnh.
+- Theater lấy thông tin phim qua `MovieModuleApi`.
+- Booking lấy snapshot suất chiếu và ghế qua `ShowtimeModuleApi`.
+- Booking cung cấp guard để Theater không hủy suất chiếu đã có booking.
+- Luật phụ thuộc giữa các package được kiểm tra bằng ArchUnit.
 
-Flyway tự chạy các migration khi API khởi động. Profile `local` có thể tạo Admin demo theo biến môi trường; ứng dụng hiện không seed sẵn Customer, Movie, phòng hay suất chiếu. Tạo dữ liệu tải bằng hướng dẫn trong `load-test/README.md`.
+Cấu trúc chính:
 
-## Chạy bằng Docker Compose
+```text
+src/main/java/com/example/cinema/
+  config/                 Security, JWT, OpenAPI, seed local
+  shared/api/             Error response và request ID
+  modules/
+    identity/{api,business,data}/
+    movie/{api,business,data}/
+    theater/{api,business,config,data}/
+    booking/{api,business,data}/
+src/main/resources/
+  db/migration/           Flyway migrations
+```
+
+## 4. Chạy ứng dụng
+
+### Yêu cầu
+
+- JDK 21.
+- Docker Desktop hoặc Docker Engine có Docker Compose.
+
+### Chạy toàn bộ bằng Docker Compose
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 docker compose up --build -d
+docker compose ps
 ```
 
-Các giá trị trong `.env.example` chỉ dành cho phát triển local; hãy đổi mật khẩu DB nếu dùng ở môi trường khác. Compose khởi động PostgreSQL trước, chờ database healthy rồi mới chạy API. API lắng nghe trên mọi địa chỉ **bên trong container** để Compose chuyển tiếp cổng, nhưng cổng trên máy chỉ mở ở `127.0.0.1:8080`. Các địa chỉ kiểm tra:
+Ứng dụng chỉ mở cổng local tại `http://localhost:8080`; PostgreSQL tại `localhost:5432`.
 
-`DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` trong `.env` tạo tài khoản Admin demo ở profile `local`. Tài khoản được tạo một lần, mật khẩu phải dài 8–16 ký tự và được lưu bằng BCrypt. Đặt cả hai biến thành rỗng để bỏ qua seeding. Seeder không chạy ở profile `prod`.
+Các địa chỉ kiểm tra:
 
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
 - OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 - Liveness: <http://localhost:8080/actuator/health/liveness>
 - Readiness: <http://localhost:8080/actuator/health/readiness>
 
-### Thử đăng nhập bằng Swagger
-
-Trong `.env.example`, tài khoản Admin demo mặc định là `admin` / `demo-pass-1234`. Sau khi Compose khởi động:
-
-1. Mở Swagger UI, gọi `POST /api/v1/auth/login` với JSON:
-
-   ```json
-   {"username":"admin","password":"demo-pass-1234"}
-   ```
-
-2. Sao chép `data.accessToken` trong response, bấm **Authorize** và dán riêng token (không thêm tiền tố `Bearer`).
-3. Gọi `GET /api/v1/users/me`; response cần có `data.role: "ADMIN"`.
-
-Nếu đã đổi `DEMO_ADMIN_USERNAME` hoặc `DEMO_ADMIN_PASSWORD` trong `.env`, hãy dùng giá trị đó. Để tắt tài khoản demo, đặt cả hai biến thành rỗng. Tài khoản này chỉ dành cho local; có thể dùng để thử các API quản trị Movie, phòng và suất chiếu trong Swagger.
-
-## Movie
-
-| Method | Endpoint | Quyền |
-|---|---|---|
-| GET | `/api/v1/movies?page=1&pageSize=20&status=NOW_SHOWING` | Public |
-| GET | `/api/v1/movies/{movieId}` | Public |
-| POST | `/api/v1/admin/movies` | Admin |
-| PATCH | `/api/v1/admin/movies/{movieId}` | Admin |
-| DELETE | `/api/v1/admin/movies/{movieId}` | Admin |
-
-Ví dụ tạo phim:
-
-```powershell
-$movie = @{
-  title = 'Interstellar'
-  description = 'Một chuyến đi tìm nơi sống mới ngoài Trái Đất.'
-  durationMinutes = 169
-  ageRating = 'T13'
-  releaseDate = '2026-10-01'
-  posterUrl = $null
-  status = 'NOW_SHOWING'
-} | ConvertTo-Json
-
-Invoke-RestMethod 'http://localhost:8080/api/v1/admin/movies' -Method Post -Headers $headers -ContentType 'application/json' -Body $movie
-```
-
-`PATCH` chỉ đổi field có trong JSON; `posterUrl: null` xóa ảnh. Body rỗng, field bắt buộc null, title/description rỗng, duration không dương, ngày sai định dạng và kiểu JSON sai đều bị từ chối. `DELETE` xóa mềm nên hàng vẫn còn trong database, nhưng không còn xuất hiện ở Movie API hay contract Theater.
-
-Danh sách và chi tiết Movie là Public. Các thao tác ghi yêu cầu Admin; Movie trả `422` cho validation, `404` với mã `MOVIE_NOT_FOUND`, `401` khi thiếu token và `403` khi token không có quyền Admin. Response lỗi dùng envelope chung và trả `X-Request-Id`.
-
-## Kiểm thử Movie
-
-```powershell
-.\mvnw.cmd '-Dtest=MovieServiceTest,MovieApiTest' test
-```
-
-Bộ này gồm 30 unit test service và 43 API test. Xem kết quả lần chạy gần nhất và phạm vi kiểm thử ở [docs/kiem-thu-movie.md](docs/kiem-thu-movie.md).
-
-## K6 và báo cáo hiệu năng
-
-[load-test/README.md](load-test/README.md) hướng dẫn seed, chạy smoke/read-heavy/booking/contention, thu CPU/RAM và ghi kết quả. `smoke.js` cần JWT Admin để ghi Movie; các GET Movie được gọi không cần token.
-
-[Báo cáo hiệu năng baseline](docs/bao-cao-hieu-nang-mau.md) tổng hợp kết quả đo đạc thực tế của Movie Read và Booking Workload theo chuẩn SPEC.
-
-Dừng các container nhưng giữ dữ liệu PostgreSQL:
+Dừng ứng dụng nhưng giữ dữ liệu:
 
 ```powershell
 docker compose down
 ```
 
-## Tài liệu
+### Chạy API bằng Maven
+
+Khởi động PostgreSQL trước, sau đó chạy profile `local`:
+
+```powershell
+docker compose up -d --wait db
+.\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=local'
+```
+
+### Tài khoản Admin local
+
+`.env.example` cấu hình tài khoản demo `admin` / `demo-pass-1234`. Seeder chỉ chạy ở môi trường local/test và chỉ tạo tài khoản khi cả `DEMO_ADMIN_USERNAME` và `DEMO_ADMIN_PASSWORD` có giá trị.
+
+Đăng nhập bằng `POST /api/v1/auth/login`, lấy `data.accessToken`, sau đó gửi header:
+
+```http
+Authorization: Bearer <access-token>
+```
+
+Không sử dụng thông tin demo hoặc `JWT_SECRET` mẫu ở môi trường thật.
+
+## 5. Cấu hình
+
+| Biến | Ý nghĩa | Giá trị local mặc định |
+|---|---|---|
+| `DB_URL` | JDBC URL của PostgreSQL | `jdbc:postgresql://localhost:5432/cinema` |
+| `DB_USERNAME` | Tài khoản database | `cinema` |
+| `DB_PASSWORD` | Mật khẩu database | `cinema` |
+| `JWT_SECRET` | Khóa ký JWT | Bắt buộc thay ngoài local |
+| `JWT_EXPIRATION_SECONDS` | Thời hạn token | `3600` |
+| `SERVER_PORT` | Cổng API | `8080` |
+| `DEMO_ADMIN_USERNAME` | Username Admin demo | `admin` |
+| `DEMO_ADMIN_PASSWORD` | Password Admin demo | `demo-pass-1234` |
+
+## 6. Đặc tả API
+
+- [OpenAPI 3.1 dạng JSON](docs/openapi.json) là bản đặc tả tĩnh có thể preview trên GitHub/IDE hoặc import vào Swagger Editor, Postman và Insomnia.
+- Swagger UI và `/v3/api-docs` là tài liệu sinh trực tiếp từ phiên bản ứng dụng đang chạy.
+- Swagger/OpenAPI chỉ được truy cập công khai ở profile `local` và `test`.
+
+Khi contract API thay đổi, chạy ứng dụng rồi cập nhật bản tĩnh:
+
+```powershell
+Invoke-WebRequest http://localhost:8080/v3/api-docs -OutFile docs/openapi.json
+```
+
+Nhóm endpoint chính:
+
+| Nhóm | Prefix | Truy cập |
+|---|---|---|
+| Authentication | `/api/v1/auth` | Public |
+| User profile | `/api/v1/users` | Đã đăng nhập |
+| Movie reads | `/api/v1/movies` | Public |
+| Showtime/seat reads | `/api/v1/showtimes` | Public |
+| Booking | `/api/v1/bookings` | Customer sở hữu dữ liệu |
+| Administration | `/api/v1/admin` | Admin |
+
+## 7. Kiểm thử và CI
+
+```powershell
+.\mvnw.cmd clean verify
+```
+
+Lệnh `verify` chạy unit test, API test, architecture test và integration test PostgreSQL bằng Testcontainers. Docker phải hoạt động khi chạy toàn bộ bộ test. GitHub Actions cũng chạy `mvn verify` và kiểm tra Docker image có build được hay không.
+
+## 8. Tài liệu liên quan
 
 - [Đặc tả hệ thống](docs/SPEC.md)
-- [Kế hoạch phân công](docs/work_plan.md)
+- [Kế hoạch và phân công](docs/work_plan.md)
+- [Quyết định kiến trúc modular monolith](docs/adr/001-modular-monolith-3-tier.md)
 - [Contract tích hợp Theater–Booking](docs/theater_booking_contract.md)
-- [Yêu cầu và tiến độ Booking](docs/booking_requirements.md)
+- [Yêu cầu Booking](docs/booking_requirements.md)
