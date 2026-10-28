@@ -18,6 +18,15 @@ spring:
         jdbc:
           time_zone: UTC
 
+cinema:
+  movie:
+    enabled: true
+  theater:
+    enabled: true
+  jwt:
+    secret: ${JWT_SECRET:}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+
 server:
   port: ${SERVER_PORT:8080}
   error:

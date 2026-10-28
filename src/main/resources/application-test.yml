@@ -8,3 +8,8 @@ spring:
     password: ${DB_PASSWORD:cinema}
   main:
     banner-mode: off
+
+cinema:
+  jwt:
+    secret: test-only-jwt-secret-not-for-any-other-environment
+    expiration-seconds: 3600

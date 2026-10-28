@@ -1,0 +1,686 @@
+{
+  "measuredDateLocal": "2026-10-29",
+  "timezone": "Asia/Saigon",
+  "sourceArchive": "cinema-kaggle-results.zip",
+  "archiveSha256": "d9e7a9d4022415772ab673737e222d37deb71e3979ad9951bd46acfb91fe43d5",
+  "sourceCsv": "kaggle-summary.csv",
+  "csvSha256": "71da3afe3e51d5151fe04966d3d137a8dde6aa95c1b87a2f330ef0bccf25b31d",
+  "csvMatchesAllSummaries": true,
+  "environments": [
+    {
+      "collectedAtUtc": "2026-10-29T00:41:15.72708+07:00",
+      "gitCommit": "36c892288a89110b203dfa1d2cf4470a14617d88",
+      "scenario": "movie-read",
+      "levels": [
+        10,
+        25,
+        50
+      ],
+      "repeats": 3,
+      "warmupSeconds": 30,
+      "measureSeconds": 120,
+      "cpuModel": "Intel(R) Xeon(R) CPU @ 2.20GHz",
+      "logicalCpuCount": 4,
+      "containerCpuQuota": 4.0,
+      "totalRamMiB": 32098.9,
+      "containerRamLimitMiB": 30720.0,
+      "os": "Linux-6.18.55+-x86_64-with-glibc2.39",
+      "python": "3.13.15",
+      "k6": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)",
+      "java": "openjdk version \"21.0.12.1\" 2026-08-18",
+      "postgres": "not available",
+      "apiPid": 4001,
+      "databasePid": 3756,
+      "resourceNote": "summed RSS can double-count shared pages; CPU is normalized to logical CPUs"
+    },
+    {
+      "collectedAtUtc": "2026-10-29T01:03:52.788049+07:00",
+      "gitCommit": "36c892288a89110b203dfa1d2cf4470a14617d88",
+      "scenario": "booking",
+      "levels": [
+        10,
+        25,
+        50
+      ],
+      "repeats": 3,
+      "warmupSeconds": 30,
+      "measureSeconds": 120,
+      "cpuModel": "Intel(R) Xeon(R) CPU @ 2.20GHz",
+      "logicalCpuCount": 4,
+      "containerCpuQuota": 4.0,
+      "totalRamMiB": 32098.9,
+      "containerRamLimitMiB": 30720.0,
+      "os": "Linux-6.18.55+-x86_64-with-glibc2.39",
+      "python": "3.13.15",
+      "k6": "k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)",
+      "java": "openjdk version \"21.0.12.1\" 2026-08-18",
+      "postgres": "not available",
+      "apiPid": 4001,
+      "databasePid": 3756,
+      "resourceNote": "summed RSS can double-count shared pages; CPU is normalized to logical CPUs"
+    }
+  ],
+  "runs": [
+    {
+      "run": "20261028-174115/movie-read-10vu-run3",
+      "requests": 11505,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-25vu-run2",
+      "requests": 28332,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-50vu-run1",
+      "requests": 54978,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-25vu-run1",
+      "requests": 28325,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-25vu-run3",
+      "requests": 28343,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-10vu-run3",
+      "requests": 11308,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-50vu-run2",
+      "requests": 56054,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-50vu-run3",
+      "requests": 55814,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-10vu-run1",
+      "requests": 11471,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-50vu-run1",
+      "requests": 57335,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-10vu-run2",
+      "requests": 11505,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-50vu-run2",
+      "requests": 57318,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-50vu-run3",
+      "requests": 57304,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-25vu-run1",
+      "requests": 28766,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-25vu-run3",
+      "requests": 28808,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-174115/movie-read-25vu-run2",
+      "requests": 28777,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-10vu-run1",
+      "requests": 11266,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "run": "20261028-180352/booking-10vu-run2",
+      "requests": 11257,
+      "unexpectedStatuses": 0,
+      "thresholds": [
+        {
+          "metric": "checks{phase:measure}",
+          "condition": "rate==1",
+          "passed": true
+        },
+        {
+          "metric": "measured_read_latency",
+          "condition": "p(95)<500",
+          "passed": true
+        },
+        {
+          "metric": "measured_technical_error",
+          "condition": "rate<0.01",
+          "passed": true
+        },
+        {
+          "metric": "measured_unexpected",
+          "condition": "count==0",
+          "passed": true
+        },
+        {
+          "metric": "measured_booking_latency",
+          "condition": "p(95)<1000",
+          "passed": true
+        },
+        {
+          "metric": "measured_business_error",
+          "condition": "rate<0.01",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}
