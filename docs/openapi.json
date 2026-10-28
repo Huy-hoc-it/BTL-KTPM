@@ -1,0 +1,1608 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "Cinema API",
+    "version" : "v1"
+  },
+  "servers" : [ {
+    "url" : "http://localhost:8080",
+    "description" : "Local server"
+  } ],
+  "tags" : [ {
+    "name" : "Movie",
+    "description" : "Xem phim và quản lý thông tin phim"
+  } ],
+  "paths" : {
+    "/api/v1/bookings" : {
+      "get" : {
+        "tags" : [ "booking-controller" ],
+        "operationId" : "getAllByUserId",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BookingSummaryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "booking-controller" ],
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register" : {
+      "post" : {
+        "tags" : [ "auth-controller" ],
+        "summary" : "Register a customer",
+        "description" : "Creates a customer account. This endpoint is public.",
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CredentialsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Account created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Username already exists",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Malformed JSON",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Credentials data is invalid",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login" : {
+      "post" : {
+        "tags" : [ "auth-controller" ],
+        "summary" : "Log in",
+        "description" : "Authenticates with username and password. This endpoint is public.",
+        "operationId" : "login",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CredentialsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Login succeeded",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Invalid credentials",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Malformed JSON",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Credentials data is invalid",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/showtimes" : {
+      "post" : {
+        "tags" : [ "admin-theater-controller" ],
+        "operationId" : "createShowtime",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateShowtimeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Malformed request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Authentication required",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Admin role required",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Movie, auditorium or showtime not found",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Duplicate name, seat, overlapping schedule, future showtimes or confirmed bookings",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Validation or Theater business rule violation",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Showtime created with a 15 minute cleanup buffer",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/movies" : {
+      "post" : {
+        "tags" : [ "Movie" ],
+        "summary" : "Tạo phim",
+        "description" : "Yêu cầu quyền Admin.",
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateMovieRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Đã tạo phim",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SingleMovieResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Thiếu hoặc sai token",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Không có quyền Admin",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "JSON, UUID hoặc query sai kiểu",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Dữ liệu không hợp lệ; details chỉ ra field và lý do",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Lỗi hệ thống",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/auditoriums" : {
+      "get" : {
+        "tags" : [ "admin-theater-controller" ],
+        "summary" : "List active auditoriums and their seat layouts",
+        "operationId" : "listAuditoriums",
+        "responses" : {
+          "400" : {
+            "description" : "Malformed request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditoriumResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Authentication required",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditoriumResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Admin role required",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditoriumResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Movie, auditorium or showtime not found",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditoriumResponse"
+                  }
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Duplicate name, seat, overlapping schedule, future showtimes or confirmed bookings",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditoriumResponse"
+                  }
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Validation or Theater business rule violation",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AuditoriumResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "admin-theater-controller" ],
+        "operationId" : "createAuditorium",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateAuditoriumRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Malformed request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Authentication required",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Admin role required",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Movie, auditorium or showtime not found",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Duplicate name, seat, overlapping schedule, future showtimes or confirmed bookings",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Validation or Theater business rule violation",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Auditorium and seats created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditoriumResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/movies/{movieId}" : {
+      "delete" : {
+        "tags" : [ "Movie" ],
+        "summary" : "Xóa mềm phim",
+        "description" : "Yêu cầu Admin. Giữ hàng dữ liệu và ghi deletedAt; xóa lại trả 404.",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "movieId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Đã xóa phim; không có response body"
+          },
+          "404" : {
+            "description" : "Không tìm thấy phim",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Thiếu hoặc sai token",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Không có quyền Admin",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "JSON, UUID hoặc query sai kiểu",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Dữ liệu không hợp lệ; details chỉ ra field và lý do",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Lỗi hệ thống",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      },
+      "patch" : {
+        "tags" : [ "Movie" ],
+        "summary" : "Cập nhật phim",
+        "description" : "Yêu cầu Admin. Field không gửi giữ nguyên; posterUrl: null xóa ảnh. Body rỗng hoặc null ở field bắt buộc trả 422.",
+        "operationId" : "update",
+        "parameters" : [ {
+          "name" : "movieId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateMovieRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Phim sau cập nhật",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SingleMovieResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Không tìm thấy phim",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Thiếu hoặc sai token",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Không có quyền Admin",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "JSON, UUID hoặc query sai kiểu",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Dữ liệu không hợp lệ; details chỉ ra field và lý do",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Lỗi hệ thống",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/users/me" : {
+      "get" : {
+        "tags" : [ "user-controller" ],
+        "summary" : "Get current user",
+        "description" : "Returns the authenticated user's public profile.",
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "description" : "Profile returned",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Bearer token is missing, invalid, or no longer valid",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/showtimes" : {
+      "get" : {
+        "tags" : [ "showtime-controller" ],
+        "summary" : "List scheduled showtimes for a movie on a UTC date",
+        "description" : "Uses [00:00 UTC, next day 00:00 UTC); excludes CANCELLED and FINISHED.",
+        "operationId" : "listByMovieAndDate",
+        "parameters" : [ {
+          "name" : "movieId",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "date",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Missing or malformed movieId or date",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ShowtimeResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/showtimes/{id}" : {
+      "get" : {
+        "tags" : [ "showtime-controller" ],
+        "summary" : "Get showtime details, including CANCELLED and FINISHED showtimes",
+        "operationId" : "getById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "Showtime not found",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ShowtimeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/showtimes/{id}/seats" : {
+      "get" : {
+        "tags" : [ "showtime-seat-controller" ],
+        "summary" : "Get physical seats and current availability for a showtime",
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "Showtime not found",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SeatResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/movies" : {
+      "get" : {
+        "tags" : [ "Movie" ],
+        "summary" : "Danh sách phim",
+        "description" : "Cần đăng nhập. Sắp xếp createdAt giảm dần, rồi id giảm dần; không bao gồm phim đã xóa.",
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "description" : "Trang bắt đầu từ 1",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "minimum" : 1
+          }
+        }, {
+          "name" : "pageSize",
+          "in" : "query",
+          "description" : "Số phim mỗi trang",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "maximum" : 100,
+            "minimum" : 1
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "COMING_SOON", "NOW_SHOWING", "ENDED" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "JSON, UUID hoặc query sai kiểu",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Dữ liệu không hợp lệ; details chỉ ra field và lý do",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Lỗi hệ thống",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Danh sách và phân trang",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MovieListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/movies/{movieId}" : {
+      "get" : {
+        "tags" : [ "Movie" ],
+        "summary" : "Xem chi tiết phim",
+        "description" : "Cần đăng nhập. Phim đã xóa mềm được xem là không tồn tại.",
+        "operationId" : "getById_1",
+        "parameters" : [ {
+          "name" : "movieId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thông tin phim",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SingleMovieResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Không tìm thấy phim",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "JSON, UUID hoặc query sai kiểu",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Dữ liệu không hợp lệ; details chỉ ra field và lý do",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Lỗi hệ thống",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/bookings/{bookingId}" : {
+      "get" : {
+        "tags" : [ "booking-controller" ],
+        "operationId" : "getByUserIdAndBookingId",
+        "parameters" : [ {
+          "name" : "bookingId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "booking-controller" ],
+        "operationId" : "cancel",
+        "parameters" : [ {
+          "name" : "bookingId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/showtimes/{id}" : {
+      "delete" : {
+        "tags" : [ "admin-theater-controller" ],
+        "operationId" : "cancelShowtime",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Malformed request"
+          },
+          "401" : {
+            "description" : "Authentication required"
+          },
+          "403" : {
+            "description" : "Admin role required"
+          },
+          "404" : {
+            "description" : "Movie, auditorium or showtime not found"
+          },
+          "409" : {
+            "description" : "Duplicate name, seat, overlapping schedule, future showtimes or confirmed bookings"
+          },
+          "422" : {
+            "description" : "Validation or Theater business rule violation"
+          },
+          "204" : {
+            "description" : "Future scheduled showtime without confirmed bookings cancelled"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/auditoriums/{id}" : {
+      "delete" : {
+        "tags" : [ "admin-theater-controller" ],
+        "operationId" : "deleteAuditorium",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Malformed request"
+          },
+          "401" : {
+            "description" : "Authentication required"
+          },
+          "403" : {
+            "description" : "Admin role required"
+          },
+          "404" : {
+            "description" : "Movie, auditorium or showtime not found"
+          },
+          "409" : {
+            "description" : "Duplicate name, seat, overlapping schedule, future showtimes or confirmed bookings"
+          },
+          "422" : {
+            "description" : "Validation or Theater business rule violation"
+          },
+          "204" : {
+            "description" : "Auditorium soft deleted; seats retained"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "CreateBookingRequest" : {
+        "type" : "object",
+        "properties" : {
+          "showtimeId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "seatIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            }
+          }
+        }
+      },
+      "BookingDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "showtimeId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "seats" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BookingSeatResponse"
+            }
+          },
+          "totalAmount" : {
+            "type" : "number"
+          },
+          "paymentStatus" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "PAID", "FAILED" ]
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "BookingSeatResponse" : {
+        "type" : "object",
+        "properties" : {
+          "seatId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "price" : {
+            "type" : "number"
+          }
+        }
+      },
+      "CredentialsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string",
+            "description" : "3–50 characters: letters, digits, dot, underscore, or hyphen",
+            "example" : "alice_01",
+            "maxLength" : 50,
+            "minLength" : 3,
+            "pattern" : "[a-zA-Z0-9._-]+"
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Password containing 8–16 characters",
+            "example" : "password1",
+            "maxLength" : 16,
+            "minLength" : 8
+          }
+        },
+        "required" : [ "password", "username" ]
+      },
+      "Data" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "username" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "CUSTOMER", "ADMIN" ]
+          }
+        }
+      },
+      "UserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/Data"
+          }
+        }
+      },
+      "ApiError" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "details" : {
+            "type" : "array",
+            "items" : { }
+          },
+          "requestId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ErrorResponse" : {
+        "type" : "object",
+        "properties" : {
+          "error" : {
+            "$ref" : "#/components/schemas/ApiError"
+          }
+        }
+      },
+      "LoginResponse" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/Data"
+          }
+        }
+      },
+      "CreateShowtimeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "movieId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "auditoriumId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "basePrice" : {
+            "type" : "number",
+            "minimum" : 0.01
+          }
+        },
+        "required" : [ "auditoriumId", "basePrice", "movieId", "startsAt" ]
+      },
+      "ShowtimeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "movieId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "auditoriumId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "basePrice" : {
+            "type" : "number"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "SCHEDULED", "CANCELLED", "FINISHED" ]
+          }
+        }
+      },
+      "CreateMovieRequest" : {
+        "type" : "object",
+        "additionalProperties" : false,
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "example" : "Interstellar",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32",
+            "example" : 169
+          },
+          "ageRating" : {
+            "type" : "string",
+            "enum" : [ "P", "T13", "T16", "T18" ]
+          },
+          "releaseDate" : {
+            "type" : "string",
+            "format" : "date",
+            "example" : "2026-10-01"
+          },
+          "posterUrl" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 500,
+            "minLength" : 0
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "COMING_SOON", "NOW_SHOWING", "ENDED" ]
+          }
+        },
+        "required" : [ "ageRating", "description", "durationMinutes", "releaseDate", "status", "title" ]
+      },
+      "MovieResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "ageRating" : {
+            "type" : "string",
+            "enum" : [ "P", "T13", "T16", "T18" ]
+          },
+          "releaseDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "posterUrl" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "COMING_SOON", "NOW_SHOWING", "ENDED" ]
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "SingleMovieResponse" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/MovieResponse"
+          }
+        }
+      },
+      "CreateAuditoriumRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "seatLayout" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatLayoutRequest"
+            },
+            "minItems" : 1
+          }
+        },
+        "required" : [ "name", "seatLayout" ]
+      },
+      "SeatLayoutRequest" : {
+        "type" : "object",
+        "properties" : {
+          "row" : {
+            "type" : "string",
+            "maxLength" : 10,
+            "minLength" : 0
+          },
+          "from" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 1
+          },
+          "to" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 1
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "STANDARD", "VIP" ]
+          },
+          "rangeValid" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "row", "type" ]
+      },
+      "AuditoriumResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "ACTIVE", "INACTIVE" ]
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "seats" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatResponse"
+            }
+          }
+        }
+      },
+      "SeatResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "row" : {
+            "type" : "string"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "STANDARD", "VIP" ]
+          }
+        }
+      },
+      "UpdateMovieRequest" : {
+        "type" : "object",
+        "additionalProperties" : false,
+        "description" : "Field không gửi giữ nguyên. Gửi posterUrl: null để xóa ảnh.",
+        "minProperties" : 1,
+        "properties" : {
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "durationMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "ageRating" : {
+            "type" : "string",
+            "enum" : [ "P", "T13", "T16", "T18" ]
+          },
+          "releaseDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "posterUrl" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 500
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "COMING_SOON", "NOW_SHOWING", "ENDED" ]
+          }
+        }
+      },
+      "MovieListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MovieResponse"
+            }
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginationMeta" : {
+        "type" : "object",
+        "properties" : {
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalItems" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "BookingSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
+      }
+    }
+  }
+}
