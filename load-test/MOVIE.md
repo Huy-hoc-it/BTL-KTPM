@@ -9,7 +9,7 @@ Các script gửi HTTP tới ứng dụng đang chạy; chúng không tự khở
 
 ## Chuẩn bị dữ liệu
 
-Seed thêm phim vào DB và không xóa dữ liệu cũ. Dùng môi trường đo riêng nếu không muốn làm bẩn DB phát triển. Fixture cục bộ có JWT Admin nên không commit file `fixtures.local.json`.
+Seed thêm phim vào DB và không xóa dữ liệu cũ. Dùng môi trường đo riêng nếu không muốn làm bẩn DB phát triển. Fixture cục bộ có JWT Admin để tạo/xóa phim nên không commit file `fixtures.local.json`; GET Movie trong cả hai kịch bản không gửi token.
 
 ~~~powershell
 $env:BASE_URL = 'http://127.0.0.1:8080'
@@ -19,11 +19,11 @@ $env:MOVIE_COUNT = '1000'
 $env:DELETED_COUNT = '50'
 node load-test/seed-movie.mjs
 $env:FIXTURES = (Resolve-Path 'load-test/fixtures.local.json').Path
-k6 run load-test/smoke.js
-k6 run load-test/movie-read.js
+k6 run --include-system-env-vars load-test/smoke.js
+k6 run --include-system-env-vars load-test/movie-read.js
 ~~~
 
-Có thể dùng `ADMIN_TOKEN` thay cho username/password. Mặc định seed 1.000 phim, xóa mềm 50 phim đầu và lưu token để GET Movie đã đăng nhập. `movie-read.js` dùng tối đa 100 ID phim còn lại. Không seed lại giữa các lượt so sánh vì dữ liệu cũ vẫn ảnh hưởng DB.
+Có thể dùng `ADMIN_TOKEN` thay cho username/password. Mặc định seed 1.000 phim, xóa mềm 50 phim đầu và lưu token Admin trong fixture. `movie-read.js` dùng tối đa 100 ID phim còn lại. Không seed lại giữa các lượt so sánh vì dữ liệu cũ vẫn ảnh hưởng DB.
 
 Để thử nhanh script, giảm `MOVIE_COUNT`, đặt `DELETED_COUNT=0`, `WARMUP_SECONDS=0`, `DURATION_SECONDS=5`. Lượt ngắn chỉ kiểm tra luồng chạy, không phải baseline.
 
@@ -36,7 +36,7 @@ $env:GIT_COMMIT = git rev-parse HEAD
 $env:VUS = '25'
 $env:WARMUP_SECONDS = '30'
 $env:DURATION_SECONDS = '120'
-k6 run --out json=load-test/results/movie-read-25vu-run1-raw.json load-test/movie-read.js
+k6 run --include-system-env-vars --out json=load-test/results/movie-read-25vu-run1-raw.json load-test/movie-read.js
 ~~~
 
 Chạy riêng 10, 25 và 50 VU, ít nhất ba lượt mỗi mức; giữ nguyên dataset, cấu hình JVM/pool và phần cứng. Tính throughput bằng số request trong phase đo chia thời lượng phase đó, không dùng `http_reqs.rate` của toàn lượt vì metric này còn tính setup và warm-up.

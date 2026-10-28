@@ -1,6 +1,6 @@
 # Kiểm thử Movie
 
-Lần kiểm chứng: 26/10/2026, Windows, Java 24.0.2 (compile release 21).
+Lần kiểm chứng: 27/10/2026, Windows, Java 24.0.2 (compile release 21).
 
 Đã chạy 73 test Movie: 30 unit test `MovieServiceTest` và 43 API test `MovieApiTest`; không failure, error hay skipped.
 
@@ -22,10 +22,10 @@ Các trường hợp:
 - Input sai không ghi DB; PATCH nhiều field lỗi không cập nhật một phần.
 - JSON/UUID/query/date sai, enum dạng số, số dạng chuỗi, field lạ.
 - Release date chỉ nhận ngày yyyy-MM-dd hợp lệ; không nhận array, datetime hay chuỗi rỗng.
-- Đọc và ghi Movie cần JWT; Admin mới được ghi; JWT sai bị từ chối; Customer nhận 403.
+- GET Movie public; ghi Movie cần Admin; JWT sai bị từ chối; Customer nhận 403 khi ghi.
 - 404 MOVIE_NOT_FOUND, 422 có details/requestId.
 - Xóa mềm giữ hàng; contract Theater phản ánh duration mới và ẩn phim đã xóa.
-- OpenAPI mô tả năm operation Movie và security theo cấu hình hiện tại.
+- OpenAPI mô tả năm operation Movie; hai GET public, các operation ghi dùng Bearer JWT.
 
 ## Báo cáo và chạy lại
 

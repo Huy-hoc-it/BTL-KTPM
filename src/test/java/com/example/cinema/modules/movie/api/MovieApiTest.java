@@ -69,10 +69,10 @@ class MovieApiTest {
     }
 
     @Test
-    void adminCrudAndAuthenticatedReadsUseTheDocumentedEnvelope() throws Exception {
+    void adminCrudAndPublicReadsUseTheDocumentedEnvelope() throws Exception {
         String id=createMovie();
-        mvc.perform(get("/api/v1/movies/"+id).header("Authorization",admin)).andExpect(status().isOk()).andExpect(jsonPath("$.data.title").value("Interstellar"));
-        mvc.perform(get("/api/v1/movies?status=NOW_SHOWING&pageSize=1").header("Authorization",admin)).andExpect(status().isOk())
+        mvc.perform(get("/api/v1/movies/"+id)).andExpect(status().isOk()).andExpect(jsonPath("$.data.title").value("Interstellar"));
+        mvc.perform(get("/api/v1/movies?status=NOW_SHOWING&pageSize=1")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.meta.totalItems").value(1)).andExpect(jsonPath("$.meta.totalPages").value(1));
         mvc.perform(patch("/api/v1/admin/movies/"+id).header("Authorization",admin).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"Updated\",\"posterUrl\":null}")).andExpect(status().isOk())
@@ -81,8 +81,8 @@ class MovieApiTest {
         mvc.perform(delete("/api/v1/admin/movies/"+id).header("Authorization",admin))
                 .andExpect(status().isNoContent()).andExpect(content().string(""));
         assertThat(rows.get(UUID.fromString(id)).getDeletedAt()).isNotNull();
-        mvc.perform(get("/api/v1/movies/"+id).header("Authorization",admin)).andExpect(status().isNotFound()).andExpect(jsonPath("$.error.code").value("MOVIE_NOT_FOUND"));
-        mvc.perform(get("/api/v1/movies").header("Authorization",admin)).andExpect(status().isOk()).andExpect(jsonPath("$.meta.totalPages").value(0));
+        mvc.perform(get("/api/v1/movies/"+id)).andExpect(status().isNotFound()).andExpect(jsonPath("$.error.code").value("MOVIE_NOT_FOUND"));
+        mvc.perform(get("/api/v1/movies")).andExpect(status().isOk()).andExpect(jsonPath("$.meta.totalPages").value(0));
         mvc.perform(delete("/api/v1/admin/movies/"+id).header("Authorization",admin)).andExpect(status().isNotFound());
     }
 
@@ -176,7 +176,8 @@ class MovieApiTest {
         JsonNode docs=mapper.readTree(mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         JsonNode paths=docs.path("paths");
         assertThat(paths.path("/api/v1/movies").has("get")).isTrue();
-        assertThat(paths.path("/api/v1/movies/{movieId}").path("get").path("security").get(0).has("bearerAuth")).isTrue();
+        assertThat(paths.path("/api/v1/movies").path("get").has("security")).isFalse();
+        assertThat(paths.path("/api/v1/movies/{movieId}").path("get").has("security")).isFalse();
         assertThat(paths.path("/api/v1/admin/movies").path("post").path("security").get(0).has("bearerAuth")).isTrue();
         assertThat(paths.path("/api/v1/admin/movies/{movieId}").path("patch").path("responses").has("422")).isTrue();
         assertThat(paths.path("/api/v1/admin/movies/{movieId}").path("delete").path("responses").has("204")).isTrue();
