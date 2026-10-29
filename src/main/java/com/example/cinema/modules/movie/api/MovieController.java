@@ -37,11 +37,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/v1")
 @ConditionalOnProperty(name = "cinema.movie.enabled", havingValue = "true", matchIfMissing = true)
-@Tag(name = "Movie", description = "Xem phim và quản lý thông tin phim")
+@Tag(name = "Movie", description = "Browse movies and manage movie metadata")
 @ApiResponses({
-    @ApiResponse(responseCode = "400", description = "JSON, UUID hoặc query sai kiểu", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-    @ApiResponse(responseCode = "422", description = "Dữ liệu không hợp lệ; details chỉ ra field và lý do", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-    @ApiResponse(responseCode = "500", description = "Lỗi hệ thống", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Malformed JSON, invalid UUID, or invalid query parameter", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+    @ApiResponse(responseCode = "422", description = "Validation failed; details array indicates invalid fields", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
 })
 public class MovieController {
     private MovieService movieService;
@@ -66,11 +66,11 @@ public class MovieController {
     }
 
     @PostMapping("/admin/movies")
-    @Operation(summary = "Tạo phim", description = "Yêu cầu quyền Admin.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Create movie", description = "Requires Admin authority.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Đã tạo phim", content = @Content(schema = @Schema(implementation = SingleMovieResponse.class))),
-        @ApiResponse(responseCode = "401", description = "Thiếu hoặc sai token", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403", description = "Không có quyền Admin", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "201", description = "Movie created", content = @Content(schema = @Schema(implementation = SingleMovieResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Bearer token is missing, invalid, or no longer valid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "Admin authority required", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<SingleMovieResponse> create(@Valid @RequestBody CreateMovieRequest request) {
         Movie movie = movieService.create(
@@ -88,10 +88,10 @@ public class MovieController {
     }
 
     @GetMapping("/movies/{movieId}")
-    @Operation(summary = "Xem chi tiết phim", description = "Public. Phim đã xóa mềm được xem là không tồn tại.")
+    @Operation(summary = "Get movie details", description = "Public. Soft-deleted movies are treated as not found.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Thông tin phim", content = @Content(schema = @Schema(implementation = SingleMovieResponse.class))),
-        @ApiResponse(responseCode = "404", description = "Không tìm thấy phim", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "200", description = "Movie details returned", content = @Content(schema = @Schema(implementation = SingleMovieResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Movie not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<SingleMovieResponse> getById(@PathVariable("movieId") UUID movieId) {
         Optional<Movie> movieOpt = movieService.getById(movieId);
@@ -105,12 +105,12 @@ public class MovieController {
     }
 
     @GetMapping("/movies")
-    @Operation(summary = "Danh sách phim", description = "Public. Sắp xếp createdAt giảm dần, rồi id giảm dần; không bao gồm phim đã xóa.")
-    @ApiResponse(responseCode = "200", description = "Danh sách và phân trang", content = @Content(schema = @Schema(implementation = MovieListResponse.class)))
+    @Operation(summary = "List movies", description = "Public. Ordered by createdAt descending, then id descending; excludes soft-deleted movies.")
+    @ApiResponse(responseCode = "200", description = "Movie list and pagination metadata returned", content = @Content(schema = @Schema(implementation = MovieListResponse.class)))
     public ResponseEntity<MovieListResponse> list(
-            @Parameter(description = "Trang bắt đầu từ 1", schema = @Schema(minimum = "1", defaultValue = "1"))
+            @Parameter(description = "Page number starting from 1", schema = @Schema(minimum = "1", defaultValue = "1"))
             @RequestParam(name = "page", defaultValue = "1") int page,
-            @Parameter(description = "Số phim mỗi trang", schema = @Schema(minimum = "1", maximum = "100", defaultValue = "20"))
+            @Parameter(description = "Number of items per page", schema = @Schema(minimum = "1", maximum = "100", defaultValue = "20"))
             @RequestParam(name = "pageSize", defaultValue = "20") int pageSize,
             @RequestParam(name = "status", required = false) MovieStatus status) {
         MoviePage moviePage = movieService.list(page, pageSize, status);
@@ -127,12 +127,12 @@ public class MovieController {
     }
 
     @PatchMapping("/admin/movies/{movieId}")
-    @Operation(summary = "Cập nhật phim", description = "Yêu cầu Admin. Field không gửi giữ nguyên; posterUrl: null xóa ảnh. Body rỗng hoặc null ở field bắt buộc trả 422.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Update movie", description = "Requires Admin authority. Omitted fields are retained; posterUrl: null removes poster. Empty body or null in required fields returns 422.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Phim sau cập nhật", content = @Content(schema = @Schema(implementation = SingleMovieResponse.class))),
-        @ApiResponse(responseCode = "404", description = "Không tìm thấy phim", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "401", description = "Thiếu hoặc sai token", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403", description = "Không có quyền Admin", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "200", description = "Updated movie returned", content = @Content(schema = @Schema(implementation = SingleMovieResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Movie not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Bearer token is missing, invalid, or no longer valid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "Admin authority required", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<SingleMovieResponse> update(
             @PathVariable("movieId") UUID movieId,
@@ -158,12 +158,12 @@ public class MovieController {
     }
 
     @DeleteMapping("/admin/movies/{movieId}")
-    @Operation(summary = "Xóa mềm phim", description = "Yêu cầu Admin. Giữ hàng dữ liệu và ghi deletedAt; xóa lại trả 404.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Soft delete movie", description = "Requires Admin authority. Retains data row and records deletedAt; repeating returns 404.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Đã xóa phim; không có response body", content = @Content),
-        @ApiResponse(responseCode = "404", description = "Không tìm thấy phim", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "401", description = "Thiếu hoặc sai token", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403", description = "Không có quyền Admin", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "204", description = "Movie soft-deleted; no response body", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Movie not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Bearer token is missing, invalid, or no longer valid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "Admin authority required", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<Void> delete(
             @PathVariable("movieId") UUID movieId

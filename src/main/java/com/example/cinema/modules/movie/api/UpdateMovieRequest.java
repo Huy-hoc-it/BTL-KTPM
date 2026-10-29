@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 
-@Schema(description = "Field không gửi giữ nguyên. Gửi posterUrl: null để xóa ảnh.",
+@Schema(description = "Omitted fields are retained. Send posterUrl: null to remove poster.",
         minProperties = 1, additionalProperties = Schema.AdditionalPropertiesValue.FALSE)
 public class UpdateMovieRequest {
     @JsonDeserialize(using = MovieStringDeserializer.class)
