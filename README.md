@@ -174,55 +174,26 @@ Invoke-WebRequest http://localhost:8080/v3/api-docs -OutFile docs/openapi.json
 
 Lệnh `verify` chạy unit test, API test, architecture test và integration test PostgreSQL bằng Testcontainers. Docker phải hoạt động khi chạy toàn bộ bộ test. GitHub Actions cũng chạy `mvn verify` và kiểm tra Docker image có build được hay không.
 
-## 7. Kết quả kiểm thử tải trên Kaggle CPU
+## 7. Kiểm thử tải trên Kaggle CPU
 
-Chạy thành công **18/18 lượt đo đạt toàn bộ ngưỡng k6**, gồm Movie Read và Booking, mỗi kịch bản chạy 10/25/50 người dùng ảo (VU), ba lượt cho mỗi mức. CSV tổng hợp đã được đối chiếu với 18 summary JSON trong gói `cinema-kaggle-results.zip`.
+Kiểm thử trên Kaggle CPU (4 vCPU, 30 GiB RAM), Java 21 và PostgreSQL 16. Hai kịch bản **Movie Read** và **Booking** chạy ở mức 10/25/50 người dùng ảo (VU), mỗi mức 3 lượt; mỗi lượt warm-up 30 giây, đo 120 giây và think time 100 ms. API, database và k6 cùng chạy trong một phiên Kaggle.
 
-### Môi trường và cách đo
+Bảng dưới là **median của ba lượt**; độ trễ tính bằng mili giây (ms).
 
-| Mục | Cấu hình |
-|---|---|
-| Commit được đo | `36c892288a89110b203dfa1d2cf4470a14617d88` |
-| Nền tảng | Kaggle Notebook, Accelerator = None, Linux x86_64 |
-| CPU | Intel Xeon 2.20 GHz, 4 CPU logic, quota 4 vCPU |
-| Giới hạn RAM | 30 GiB |
-| Công cụ | OpenJDK 21.0.12.1, Python 3.13.15, k6 2.3.0 |
-| PostgreSQL | 16.15, xác nhận bằng `SELECT version()` trong Notebook; runner ghi phiên bản DB là `not available` |
-| JVM / connection pool | `-Xms256m -Xmx768m`; HikariCP mặc định 10 kết nối |
-| Vị trí tiến trình | API, PostgreSQL và k6 cùng chạy trong phiên Kaggle, gọi API qua `127.0.0.1:8080` |
-| Thời lượng mỗi lượt | Warm-up 30 giây, đo 120 giây, think time 100 ms |
-| Dataset seed | 1.000 phim (50 xóa mềm), 1 phòng với 109 ghế, 2 suất chiếu, 100 user tải và 50 user dành cho contention |
+| Kịch bản | VU | Request/giây | GET p95 (ms) | POST booking p95 (ms) |
+|---|---:|---:|---:|---:|
+| Movie Read | 10 | 95,88 | 5,40 | — |
+| Movie Read | 25 | 239,81 | 5,47 | — |
+| Movie Read | 50 | 477,65 | 7,12 | — |
+| Booking | 10 | 93,88 | 6,22 | 18,65 |
+| Booking | 25 | 236,10 | 4,84 | 15,71 |
+| Booking | 50 | 465,12 | 9,36 | 22,83 |
 
-Seed được tạo một lần cho cả baseline; user/ghế warm-up tách khỏi user/ghế đo. Smoke test tạo và xóa mềm thêm một phim trước khi đo.
+**18/18 lượt đạt ngưỡng k6**; lỗi kỹ thuật và nghiệp vụ thực tế đều 0%. Ngưỡng đánh giá là GET p95 < 500 ms, POST booking p95 < 1.000 ms và tỷ lệ mỗi loại lỗi < 1%.
 
-- **Movie Read:** 50% GET danh sách phim, 50% GET chi tiết phim.
-- **Booking:** 35% danh sách phim, 25% lịch chiếu, 25% trạng thái ghế, 10% POST booking và 5% GET booking của user đã đăng nhập. Booking mẫu được hủy trước lần đặt tiếp theo và khi teardown.
+Kết quả áp dụng cho điều kiện tải đã đo; chưa xác định tải bão hòa. Kịch bản tranh ghế (contention) chưa được chạy.
 
-### Kết quả tổng hợp
-
-Mỗi giá trị là **median của ba lượt** ở cùng mức tải; median của ba p95 không phải p95 gộp toàn bộ request. Throughput được tính bằng `measured_requests / 120`; các percentile lấy từ metric riêng của pha đo. Độ trễ tính bằng mili giây (ms).
-
-| Kịch bản | VU | Request/giây | GET p50 | GET p95 | GET p99 | POST booking p95 |
-|---|---:|---:|---:|---:|---:|---:|
-| Movie Read | 10 | 95,88 | 3,19 | 5,40 | 7,19 | — |
-| Movie Read | 25 | 239,81 | 3,13 | 5,47 | 8,15 | — |
-| Movie Read | 50 | 477,65 | 3,33 | 7,12 | 11,20 | — |
-| Booking | 10 | 93,88 | 3,51 | 6,22 | 8,36 | 18,65 |
-| Booking | 25 | 236,10 | 3,31 | 4,84 | 7,21 | 15,71 |
-| Booking | 50 | 465,12 | 3,86 | 9,36 | 16,52 | 22,83 |
-
-Trong cả 18 lượt, tỷ lệ lỗi kỹ thuật và lỗi nghiệp vụ đều **0%**, không có HTTP status ngoài kỳ vọng và checks của pha đo đạt **100%**. Các ngưỡng của script đều đạt: p95 GET < 500 ms, p95 POST booking < 1.000 ms, lỗi kỹ thuật/nghiệp vụ < 1%.
-
-Kết quả cho thấy hệ thống đáp ứng các mức tải đã đo trên phiên Kaggle này. Bài đo dùng mô hình closed loop có think time 100 ms, chưa xác định tải bão hòa hay công suất production. Kịch bản tranh ghế (contention) chưa được chạy trong baseline này.
-
-### Số liệu và cách chạy lại
-
-- [CSV kết quả đầy đủ 18 lượt](docs/performance/kaggle-cpu-2026-10-29-summary.csv).
-- [Thông tin môi trường, ngưỡng từng lượt và SHA-256 của gói kết quả](docs/performance/kaggle-cpu-2026-10-29-evidence.json).
-- [Notebook Kaggle](https://www.kaggle.com/code/thaidao2k6/cinema-phase-1-kaggle-cpu-baseline) và [bản Notebook trong repository](load-test/cinema-kaggle-cpu.ipynb).
-- [Hướng dẫn các kịch bản k6 và runner](load-test/README.md).
-
-Gói kết quả gốc chứa 18 raw JSON, 18 CSV tài nguyên, summary và log. Hai thư mục lượt đo là `20261028-174115` (Movie Read) và `20261028-180352` (Booking). Baseline Kaggle được ghi riêng với [báo cáo Windows/Docker trước đó](docs/bao-cao-hieu-nang-mau.md).
+[CSV 18 lượt](docs/performance/kaggle-cpu-2026-10-29-summary.csv) · [Môi trường và ngưỡng từng lượt](docs/performance/kaggle-cpu-2026-10-29-evidence.json) · [Notebook](load-test/cinema-kaggle-cpu.ipynb) · [Hướng dẫn chạy k6](load-test/README.md)
 
 ## 9. Tài liệu liên quan
 
